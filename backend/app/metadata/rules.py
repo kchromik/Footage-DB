@@ -118,6 +118,15 @@ HDR_TRANSFERS = {
     "arib-std-b67": "HLG",
 }
 
+# Wie die Projektion in der Oberflaeche heissen soll
+PROJECTION_LABELS = {
+    "equirectangular": "Equirect",
+    "half equirectangular": "Halbpanorama",
+    "cubemap": "Cubemap",
+    "eac": "EAC",
+    "dualfisheye": "Dual-Fisheye",
+}
+
 
 @dataclass
 class Derived:
@@ -254,8 +263,15 @@ def derive(probe: ProbeResult, rel_path: str, filename: str) -> Derived:
     if probe.rotation in (90, 270) and width and height:
         width, height = height, width
     result.add_tag(resolution_label(width, height), "tech")
-    if width and height and height > width:
+    if width and height and height > width and not probe.is_spherical:
         result.add_tag("Vertikal", "tech")
+
+    # 360-Material
+    if probe.is_spherical:
+        result.add_tag("360", "tech")
+        result.add_tag(PROJECTION_LABELS.get(probe.projection, probe.projection), "tech")
+        if probe.stereo_mode:
+            result.add_tag("3D", "tech")
     if probe.fps:
         result.add_tag(f"{_round_fps(probe.fps)} fps", "tech")
     if probe.bit_depth and probe.bit_depth >= 10:
@@ -302,6 +318,8 @@ def _codec_label(codec: str) -> str:
 
 
 def _source_tag(camera: str | None, probe: ProbeResult, rel_path: str) -> str | None:
+    if probe.is_spherical:
+        return "360 Kamera"
     text = f"{camera or ''} {probe.camera_make or ''} {probe.camera_model or ''}"
     if re.search(r"dji|mavic|mini|air\s*\d|inspire", text, re.I) and re.search(
         r"dji", text, re.I

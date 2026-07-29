@@ -38,7 +38,21 @@ EXIFTOOL_TAGS = [
     "PhotoStyle", "PictureProfile", "CanonLogVersion", "ColorMode", "ProTune",
     "GammaCompensation", "PictureMode", "ColorProfile", "ProfileName",
     "Rotation", "AndroidVersion", "XMLData",
+    # 360-Material (Google Spatial Media, XMP-GSpherical)
+    "ProjectionType", "Spherical", "Stitched", "StitchingSoftware",
+    "SourceCount", "StereoMode", "FullPanoWidthPixels", "InitialViewHeadingDegrees",
 ]
+
+# Projektionen, wie ffprobe und exiftool sie benennen, auf einen kurzen
+# Bezeichner gebracht
+PROJECTIONS = {
+    "equirectangular": "equirectangular",
+    "half equirectangular": "half equirectangular",
+    "tiled equirectangular": "equirectangular",
+    "cubemap": "cubemap",
+    "equi-angular cubemap": "eac",
+    "eac": "eac",
+}
 
 
 @dataclass
@@ -59,6 +73,8 @@ class ProbeResult:
     rotation: int = 0
     container: str | None = None
     encoder: str | None = None
+    projection: str | None = None
+    stereo_mode: str | None = None
 
     camera_make: str | None = None
     camera_model: str | None = None
@@ -74,6 +90,10 @@ class ProbeResult:
     @property
     def has_video(self) -> bool:
         return bool(self.width and self.height)
+
+    @property
+    def is_spherical(self) -> bool:
+        return bool(self.projection)
 
 
 def _run(cmd: list[str], timeout: int) -> tuple[int, str, str]:
@@ -337,11 +357,76 @@ def probe_file(path: Path, mtime: float | None = None) -> ProbeResult:
     result.recorded_at = recorded_at
     result.recorded_source = source
 
+    result.projection, result.stereo_mode = detect_spherical(
+        video if data else None, exif, path, result.width, result.height
+    )
+
     result.raw_tags = {
         "exif": exif,
         "ffprobe": ffprobe_tags,
     }
     return result
+
+
+def detect_spherical(
+    video: dict[str, Any] | None,
+    exif: dict[str, Any],
+    path: Path,
+    width: int | None,
+    height: int | None,
+) -> tuple[str | None, str | None]:
+    """Erkennt 360-Material und seine Projektion.
+
+    Drei Quellen, in dieser Reihenfolge: die sv3d-Box, die ffprobe als
+    Seitendaten meldet, die XMP-Angaben von Google Spatial Media, die
+    exiftool liest, und zuletzt das Seitenverhaeltnis. Ein Vollpanorama ist
+    immer exakt 2:1, das kommt sonst praktisch nicht vor.
+    """
+    projection: str | None = None
+    stereo: str | None = None
+
+    for side_data in (video or {}).get("side_data_list") or []:
+        kind = str(side_data.get("side_data_type", "")).lower()
+        if "spherical" in kind:
+            raw = str(side_data.get("projection", "equirectangular")).lower()
+            projection = PROJECTIONS.get(raw, raw)
+        elif "stereo 3d" in kind:
+            stereo = _stereo_label(side_data.get("type"))
+
+    if not projection:
+        raw = _clean(exif.get("ProjectionType"))
+        if raw:
+            projection = PROJECTIONS.get(raw.lower(), raw.lower())
+        elif str(exif.get("Spherical", "")).lower() in {"true", "1", "yes"}:
+            projection = "equirectangular"
+
+    if not stereo:
+        stereo = _stereo_label(exif.get("StereoMode"))
+
+    suffix = path.suffix.lower()
+    if not projection and suffix == ".360":
+        # GoPro Max legt zwei Spuren in einer eigenen Variante des
+        # Wuerfelformats ab, ohne die uebliche Metadatenbox
+        projection = "eac"
+    if not projection and suffix == ".insv":
+        projection = "dualfisheye"
+
+    if not projection and width and height:
+        if width == height * 2 and width >= 2880:
+            projection = "equirectangular"
+
+    return projection, stereo
+
+
+def _stereo_label(value: Any) -> str | None:
+    text = str(value or "").lower().replace("_", "-").replace(" ", "-")
+    if not text or text in {"mono", "monoscopic", "none", "0"}:
+        return None
+    if "top" in text or "tb" in text or "over-under" in text:
+        return "top-bottom"
+    if "side" in text or "left-right" in text or "lr" in text:
+        return "left-right"
+    return None
 
 
 def _rotation(video: dict[str, Any], stream_tags: dict[str, Any]) -> int:

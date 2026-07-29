@@ -9,7 +9,9 @@ ganzen Bestand ueber eine Weboberflaeche durchsuchbar.
 - Metadaten aus ffprobe, exiftool und Sony-XML-Sidecars
 - Erkennt automatisch LOG, graded, HDR oder Rec.709
 - Suche nach Bildinhalt ueber ein lokales CLIP-Modell, ohne Cloud
-- Upload grosser Dateien blockweise, mit Wiederaufnahme nach Abbruch
+- Erkennt 360-Material und rechnet dafuer brauchbare Vorschaubilder
+- Upload grosser Dateien blockweise, mit Wiederaufnahme nach Abbruch, Tags
+  direkt beim Hochladen
 - Einsortieren nach Jahr, Monat und Kamera, mit Vorschau und Undo
 
 Stack: FastAPI, SQLite, React. Ein Container, keine externen Dienste.

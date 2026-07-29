@@ -6,6 +6,7 @@ export type UploadState = 'wartet' | 'laeuft' | 'fertig' | 'fehler' | 'abgebroch
 export interface UploadTask {
   key: string
   file: File
+  tags: string[]
   uploadId?: string
   sent: number
   total: number
@@ -38,7 +39,12 @@ export function useUploader(onFinished: (clipId: number) => void) {
     async (task: UploadTask) => {
       update(task.key, { state: 'laeuft' })
       try {
-        const init = await api.initUpload(task.file.name, task.file.size)
+        const init = await api.initUpload(
+          task.file.name,
+          task.file.size,
+          '',
+          task.tags,
+        )
         const received = new Set(init.received)
         update(task.key, {
           uploadId: init.id,
@@ -107,10 +113,11 @@ export function useUploader(onFinished: (clipId: number) => void) {
   }, [runOne])
 
   const add = useCallback(
-    (files: File[]) => {
+    (files: File[], tags: string[] = []) => {
       const fresh = files.map((file) => ({
         key: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2, 7)}`,
         file,
+        tags,
         sent: 0,
         total: file.size,
         state: 'wartet' as UploadState,

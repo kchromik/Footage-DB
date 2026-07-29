@@ -349,3 +349,137 @@ class TestKompletterDurchlauf:
         zurueck = client.post(f"/api/organize/undo/{ergebnis['batch']}").json()
         assert zurueck["reverted"] == 1
         assert (media_root / "Rushes" / "C0001.MP4").exists()
+
+
+@needs_ffmpeg
+class TestUploadMitTags:
+    def test_tags_werden_beim_upload_vergeben(self, client, media_root, tmp_path):
+        quelle = make_clip(tmp_path / "Getaggt.MP4", seconds=1.0, size="320x180")
+        daten = quelle.read_bytes()
+
+        init = client.post(
+            "/api/uploads/init",
+            json={
+                "filename": "Getaggt.MP4",
+                "size": len(daten),
+                "tags": ["Berlin", "Drohne", "  Berlin  ", ""],
+            },
+        ).json()
+        for index in range(init["chunk_count"]):
+            teil = daten[index * init["chunk_size"] : (index + 1) * init["chunk_size"]]
+            client.put(f"/api/uploads/{init['id']}/chunk/{index}", content=teil)
+        fertig = client.post(f"/api/uploads/{init['id']}/complete").json()
+
+        clip = client.get(f"/api/clips/{fertig['clip_id']}").json()
+        manuell = {t["name"] for t in clip["tags"] if t["source"] == "manual"}
+        # Doppelte und leere Eintraege werden verworfen
+        assert manuell == {"Berlin", "Drohne"}
+
+        # Und danach laesst sich damit filtern
+        wait_for_queue(client)
+        assert client.get("/api/clips?tag=Berlin").json()["total"] == 1
+        assert client.get("/api/clips?q=Drohne&mode=text").json()["total"] == 1
+
+    def test_tags_ueberleben_das_neu_einlesen(self, client, media_root, tmp_path):
+        """Der Probe-Job ersetzt nur automatische Tags, nicht die eigenen."""
+        quelle = make_clip(tmp_path / "Bleibt.MP4", seconds=1.0, size="320x180")
+        daten = quelle.read_bytes()
+        init = client.post(
+            "/api/uploads/init",
+            json={"filename": "Bleibt.MP4", "size": len(daten), "tags": ["Projekt-42"]},
+        ).json()
+        for index in range(init["chunk_count"]):
+            client.put(
+                f"/api/uploads/{init['id']}/chunk/{index}",
+                content=daten[index * init["chunk_size"] : (index + 1) * init["chunk_size"]],
+            )
+        fertig = client.post(f"/api/uploads/{init['id']}/complete").json()
+        wait_for_queue(client)
+
+        client.post(f"/api/clips/{fertig['clip_id']}/reprocess", json={"what": "all"})
+        wait_for_queue(client)
+
+        clip = client.get(f"/api/clips/{fertig['clip_id']}").json()
+        assert "Projekt-42" in {t["name"] for t in clip["tags"]}
+
+
+class TestSpherical:
+    """360-Erkennung, ohne echtes 360-Material."""
+
+    def test_seitendaten_von_ffprobe(self):
+        from pathlib import Path
+
+        from app.metadata.probe import detect_spherical
+
+        video = {
+            "side_data_list": [
+                {"side_data_type": "Spherical Mapping", "projection": "equirectangular"},
+                {"side_data_type": "Stereo 3D", "type": "top and bottom"},
+            ]
+        }
+        projection, stereo = detect_spherical(video, {}, Path("a.mp4"), 3840, 1920)
+        assert projection == "equirectangular"
+        assert stereo == "top-bottom"
+
+    def test_exiftool_projektionstyp(self):
+        from pathlib import Path
+
+        from app.metadata.probe import detect_spherical
+
+        projection, _ = detect_spherical(
+            {}, {"ProjectionType": "equirectangular"}, Path("a.mp4"), 1920, 1080
+        )
+        assert projection == "equirectangular"
+
+    def test_seitenverhaeltnis_als_letzter_hinweis(self):
+        from pathlib import Path
+
+        from app.metadata.probe import detect_spherical
+
+        # Exakt 2:1 und gross genug: praktisch immer ein Vollpanorama
+        assert detect_spherical({}, {}, Path("a.mp4"), 5760, 2880)[0] == "equirectangular"
+        # Zu klein, das kann auch ein Zuschnitt sein
+        assert detect_spherical({}, {}, Path("a.mp4"), 1920, 960)[0] is None
+        # Normales 16:9 bleibt unangetastet
+        assert detect_spherical({}, {}, Path("a.mp4"), 3840, 2160)[0] is None
+
+    def test_rohformate_der_360_kameras(self):
+        from pathlib import Path
+
+        from app.metadata.probe import detect_spherical
+
+        assert detect_spherical({}, {}, Path("GS010042.360"), 4096, 1344)[0] == "eac"
+        assert detect_spherical({}, {}, Path("VID_001.insv"), 5760, 2880)[0] == "dualfisheye"
+
+    def test_tags_fuer_360(self):
+        from app.metadata.probe import ProbeResult
+        from app.metadata.rules import derive
+
+        probe = ProbeResult(
+            width=5760, height=2880, fps=30.0, duration=10.0, video_codec="hevc",
+            bit_depth=8, projection="equirectangular", stereo_mode=None,
+            camera_make="Insta360", camera_model="Insta360 X3",
+            raw_tags={"exif": {}, "ffprobe": {}},
+        )
+        result = derive(probe, "360/VID.mp4", "VID.mp4")
+        namen = {name for name, _ in result.tags}
+        assert "360" in namen
+        assert "Equirect" in namen
+        assert ("360 Kamera", "source") in result.tags
+        # Ein Panorama ist nicht "vertikal", auch wenn es breit ist
+        assert "Vertikal" not in namen
+
+    def test_flat_filter_fuer_equirect(self):
+        from app.media.preview import flatten_chain
+
+        chain = flatten_chain("equirectangular", 640, 360)
+        assert chain is not None and "v360=e:flat" in chain and "w=640:h=360" in chain
+
+        oben_unten = flatten_chain("equirectangular", 640, 360, "top-bottom")
+        assert oben_unten.startswith("crop=iw:ih/2")
+
+    def test_kein_filter_ohne_projektion(self):
+        from app.media.preview import flatten_chain
+
+        assert flatten_chain(None, 640, 360) is None
+        assert flatten_chain("dualfisheye", 640, 360) is None

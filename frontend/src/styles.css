@@ -1925,3 +1925,97 @@ textarea.field {
     padding-right: 18px;
   }
 }
+
+/* ------------------------------------------------------------- Tag-Auswahl */
+
+.tag-picker {
+  position: relative;
+}
+
+.tag-picker-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--ink-050);
+  cursor: text;
+  transition: border-color 0.14s var(--ease), background 0.14s var(--ease);
+}
+.tag-picker-field:hover {
+  border-color: var(--line-strong);
+}
+.tag-picker-field.open {
+  border-color: var(--amber-line);
+  background: var(--ink-100);
+}
+.tag-picker-field input {
+  flex: 1;
+  min-width: 130px;
+  height: 22px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  outline: none;
+}
+.tag-picker-field input::placeholder {
+  color: var(--text-faint);
+}
+.tag-picker-field .tag-pill {
+  background: var(--amber-soft);
+  border: 1px solid var(--amber-line);
+  color: var(--amber);
+}
+
+.tag-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 70;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px;
+  border-radius: var(--radius);
+  background: var(--ink-150);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop);
+  animation: fade 0.12s var(--ease);
+}
+.tag-suggestion-head {
+  padding: 6px 8px 4px;
+  font-size: 10px;
+  font-weight: 660;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.tag-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-size: 13px;
+  text-align: left;
+}
+.tag-suggestion.on {
+  background: var(--ink-200);
+  color: var(--text);
+}
+.tag-suggestion.neu.on {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+.tag-suggestion .meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}

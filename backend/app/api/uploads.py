@@ -8,6 +8,7 @@ seiner Position in einer Datei, dadurch entfaellt das Zusammensetzen.
 from __future__ import annotations
 
 import functools
+import json
 import logging
 import os
 import shutil
@@ -19,7 +20,7 @@ from pydantic import BaseModel, Field
 
 from .. import jobs, library, organize
 from ..config import settings
-from ..db import get_conn
+from ..db import get_conn, reindex_fts
 from ..events import bus
 from ..metadata.probe import probe_file
 from ..metadata.rules import derive
@@ -81,6 +82,8 @@ class InitRequest(BaseModel):
     filename: str
     size: int = Field(gt=0, le=MAX_SIZE)
     subdir: str = ""
+    # Tags, die der Clip nach dem Hochladen bekommen soll
+    tags: list[str] = Field(default_factory=list, max_length=40)
 
 
 @router.post("/init")
@@ -99,6 +102,10 @@ def init_upload(payload: InitRequest) -> dict:
         (filename, payload.size),
     ).fetchone()
     if existing and _part_file(existing["id"]).exists():
+        conn.execute(
+            "UPDATE uploads SET tags = ? WHERE id = ?",
+            (json.dumps(_clean_tags(payload.tags), ensure_ascii=False), existing["id"]),
+        )
         received = _received_chunks(existing["id"])
         return {
             "id": existing["id"],
@@ -117,9 +124,17 @@ def init_upload(payload: InitRequest) -> dict:
     part.touch()
 
     conn.execute(
-        "INSERT INTO uploads(id, filename, size_bytes, chunk_size, chunk_count, subdir) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (upload_id, filename, payload.size, chunk_size, chunk_count, payload.subdir.strip("/")),
+        "INSERT INTO uploads(id, filename, size_bytes, chunk_size, chunk_count, subdir, tags) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (
+            upload_id,
+            filename,
+            payload.size,
+            chunk_size,
+            chunk_count,
+            payload.subdir.strip("/"),
+            json.dumps(_clean_tags(payload.tags), ensure_ascii=False),
+        ),
     )
     return {
         "id": upload_id,
@@ -240,6 +255,7 @@ def complete_upload(upload_id: str) -> dict:
 
     stat = destination.stat()
     clip_id, _ = library.upsert_scanned_file(target_rel, stat)
+    _apply_tags(clip_id, row["tags"])
     jobs.enqueue("probe", clip_id)
 
     conn.execute(
@@ -251,6 +267,34 @@ def complete_upload(upload_id: str) -> dict:
     bus.publish("upload", id=upload_id, clip_id=clip_id, state="complete")
     log.info("Upload abgeschlossen: %s", target_rel)
     return {"clip_id": clip_id, "path": target_rel, "already": False}
+
+
+def _clean_tags(tags: list[str]) -> list[str]:
+    seen: list[str] = []
+    for tag in tags:
+        name = (tag or "").strip()[:60]
+        if name and name.lower() not in {s.lower() for s in seen}:
+            seen.append(name)
+    return seen
+
+
+def _apply_tags(clip_id: int, raw: str | None) -> None:
+    """Vergibt die beim Upload gewaehlten Tags als manuelle Tags."""
+    if not raw:
+        return
+    try:
+        tags = json.loads(raw)
+    except (TypeError, ValueError):
+        return
+    conn = get_conn()
+    for name in _clean_tags(tags if isinstance(tags, list) else []):
+        tag_id = library.ensure_tag(conn, name, "custom")
+        conn.execute(
+            "INSERT OR IGNORE INTO clip_tags(clip_id, tag_id, source) "
+            "VALUES (?, ?, 'manual')",
+            (clip_id, tag_id),
+        )
+    reindex_fts(conn, clip_id)
 
 
 def _target_path(temp_file: Path, filename: str, subdir: str) -> str:

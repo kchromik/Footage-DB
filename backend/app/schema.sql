@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS clips (
     rotation          INTEGER NOT NULL DEFAULT 0,
     container         TEXT,
     encoder           TEXT,
+    projection        TEXT,       -- equirectangular|half equirectangular|cubemap|eac
+    stereo_mode       TEXT,       -- mono|top-bottom|left-right
 
     -- inhaltliche Daten aus ffprobe/exiftool
     camera_make       TEXT,
@@ -165,6 +167,7 @@ CREATE TABLE IF NOT EXISTS uploads (
     state         TEXT    NOT NULL DEFAULT 'open',  -- open|complete|aborted
     target_path   TEXT,
     subdir        TEXT,
+    tags          TEXT,          -- JSON-Liste, beim Upload vergebene Tags
     clip_id       INTEGER,
     created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
     updated_at    TEXT    NOT NULL DEFAULT (datetime('now'))

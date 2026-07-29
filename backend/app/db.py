@@ -78,14 +78,23 @@ def init_db() -> None:
 
 def _apply_migrations(conn: sqlite3.Connection) -> None:
     """Spaltenweise Nachruestung, damit Updates ohne Datenverlust laufen."""
-    existing = {row["name"] for row in conn.execute("PRAGMA table_info(clips)")}
-    additions: dict[str, str] = {
-        # Platz fuer spaetere Erweiterungen: "spalte": "TYP DEFAULT ..."
+    additions: dict[str, dict[str, str]] = {
+        "clips": {
+            "projection": "TEXT",
+            "stereo_mode": "TEXT",
+        },
+        "uploads": {
+            "tags": "TEXT",
+        },
     }
-    for column, ddl in additions.items():
-        if column not in existing:
-            conn.execute(f"ALTER TABLE clips ADD COLUMN {column} {ddl}")
-            log.info("Spalte clips.%s ergaenzt", column)
+    for table, columns in additions.items():
+        existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if not existing:
+            continue  # Tabelle gibt es noch nicht, schema.sql legt sie komplett an
+        for column, ddl in columns.items():
+            if column not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+                log.info("Spalte %s.%s ergaenzt", table, column)
 
 
 # --- kleine Helfer ------------------------------------------------------

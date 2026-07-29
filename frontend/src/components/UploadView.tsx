@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useUploader } from '../lib/uploader'
 import { formatBytes } from '../lib/format'
 import { IconClose, IconRefresh, IconUpload } from './Icons'
+import { TagPicker } from './TagPicker'
 
 interface Props {
   organizeUploads: boolean
@@ -11,12 +12,18 @@ interface Props {
 
 export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
   const [over, setOver] = useState(false)
+  const [tags, setTags] = useState<string[]>([])
+  const [tagsVersion, setTagsVersion] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { tasks, add, cancel, retry, clearFinished, active } = useUploader(onUploaded)
+  const { tasks, add, cancel, retry, clearFinished, active } = useUploader((clipId) => {
+    // Neu angelegte Tags sollen beim naechsten Mal in den Vorschlaegen stehen
+    setTagsVersion((version) => version + 1)
+    onUploaded(clipId)
+  })
 
   const pickFiles = (list: FileList | null) => {
     if (!list || list.length === 0) return
-    add(Array.from(list))
+    add(Array.from(list), tags)
   }
 
   return (
@@ -29,6 +36,23 @@ export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
           {organizeUploads
             ? ` Neue Dateien werden automatisch nach ${pattern} einsortiert.`
             : ' Neue Dateien landen im Wurzelordner der Bibliothek.'}
+        </p>
+      </div>
+
+      <div className="card-block" style={{ marginBottom: 14 }}>
+        <div className="label" style={{ marginBottom: 8 }}>
+          Tags fuer diesen Upload
+        </div>
+        <TagPicker
+          value={tags}
+          onChange={setTags}
+          refreshKey={tagsVersion}
+          placeholder="Vorhandenes Tag waehlen oder neues anlegen"
+        />
+        <p className="note">
+          Bekommen alle Dateien, die du gleich hinzufuegst. Kamera, Aufloesung und
+          Bildlook vergibt FootageDB ohnehin automatisch, hier geht es um das, was
+          nur du weisst: Ort, Projekt, Motiv.
         </p>
       </div>
 
@@ -55,7 +79,7 @@ export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
           ref={inputRef}
           type="file"
           multiple
-          accept="video/*,.mp4,.mov,.mxf,.mts,.m2ts,.avi,.mkv,.m4v,.braw,.r3d"
+          accept="video/*,.mp4,.mov,.mxf,.mts,.m2ts,.avi,.mkv,.m4v,.braw,.r3d,.insv,.360"
           hidden
           onChange={(event) => {
             pickFiles(event.target.files)
@@ -88,6 +112,11 @@ export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
               <div className="upload-row" key={task.key}>
                 <div className="fname" title={task.targetPath ?? task.file.name}>
                   {task.file.name}
+                  {task.tags.length > 0 && (
+                    <span style={{ color: 'var(--amber)', fontSize: 11, marginLeft: 8 }}>
+                      {task.tags.join(', ')}
+                    </span>
+                  )}
                   {task.targetPath && (
                     <span
                       className="mono"

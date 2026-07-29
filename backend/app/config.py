@@ -9,7 +9,8 @@ from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_VIDEO_EXTENSIONS = (
-    "mp4,mov,m4v,mxf,mts,m2ts,avi,mkv,webm,wmv,mpg,mpeg,braw,r3d,avchd,insv"
+    # insv und 360 sind die Rohformate der 360-Kameras (Insta360, GoPro Max)
+    "mp4,mov,m4v,mxf,mts,m2ts,avi,mkv,webm,wmv,mpg,mpeg,braw,r3d,avchd,insv,360"
 )
 
 # Ordner, die beim Scan grundsaetzlich uebersprungen werden

@@ -58,6 +58,44 @@ def _tonemap_chain(color_transfer: str | None) -> str | None:
     )
 
 
+# Wie die Projektion beim v360-Filter heisst
+V360_INPUT = {
+    "equirectangular": "e",
+    "half equirectangular": "he",
+    "cubemap": "c3x2",
+    "eac": "eac",
+}
+
+
+def flatten_chain(
+    projection: str | None,
+    width: int,
+    height: int,
+    stereo_mode: str | None = None,
+) -> str | None:
+    """Rechnet aus einem 360-Panorama einen normalen Bildausschnitt.
+
+    Ohne das zeigt die Kachel die gestreckte Weltkarte, auf der man nichts
+    wiedererkennt. Mit rund 100 Grad Blickwinkel sieht sie aus wie eine
+    normale Aufnahme. Dual-Fisheye bleibt aussen vor, dafuer braeuchte es
+    die Kalibrierung der jeweiligen Kamera.
+    """
+    mode = V360_INPUT.get(projection or "")
+    if not mode or not has_filter("v360"):
+        return None
+    chain = []
+    if stereo_mode == "top-bottom":
+        chain.append("crop=iw:ih/2:0:0")
+    elif stereo_mode == "left-right":
+        chain.append("crop=iw/2:ih:0:0")
+    chain.append(f"v360={mode}:flat:h_fov=100:v_fov=70:w={width}:h={height}")
+    return ",".join(chain)
+
+
+def _even(value: float) -> int:
+    return max(2, int(round(value / 2)) * 2)
+
+
 def _scale_filter(target_height: int) -> str:
     # Nie hochskalieren, Breite immer gerade halten (H.264 mag keine ungeraden Werte)
     return f"scale=-2:'min({target_height},ih)'"
@@ -69,12 +107,15 @@ def build_poster(
     duration: float | None,
     color_transfer: str | None = None,
     width: int | None = None,
+    projection: str | None = None,
+    stereo_mode: str | None = None,
 ) -> None:
     width = width or settings.thumb_width
     timestamp = _poster_timestamp(duration)
     destination.parent.mkdir(parents=True, exist_ok=True)
 
-    filters = [f"scale={width}:-2:flags=lanczos"]
+    flat = flatten_chain(projection, width, _even(width * 9 / 16), stereo_mode)
+    filters = [flat] if flat else [f"scale={width}:-2:flags=lanczos"]
     tonemap = _tonemap_chain(color_transfer)
     if tonemap:
         filters.insert(0, tonemap)
@@ -123,6 +164,8 @@ def extract_frames(
     duration: float | None,
     target_dir: Path,
     color_transfer: str | None = None,
+    projection: str | None = None,
+    stereo_mode: str | None = None,
 ) -> list[Path]:
     """Zieht count gleichmaessig verteilte Einzelbilder aus dem Video."""
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -144,7 +187,8 @@ def extract_frames(
         filters.append("fps=1")
         seek = []
 
-    filters.append(f"scale={width}:-2:flags=bilinear")
+    flat = flatten_chain(projection, width, _even(width * 9 / 16), stereo_mode)
+    filters.append(flat if flat else f"scale={width}:-2:flags=bilinear")
 
     args = base_command() + seek + [
         "-i", str(source),
@@ -163,6 +207,8 @@ def build_sprite(
     destination: Path,
     duration: float | None,
     color_transfer: str | None = None,
+    projection: str | None = None,
+    stereo_mode: str | None = None,
 ) -> SpriteInfo:
     """Kachelblatt fuer die Vorschau beim Drueberfahren im Grid."""
     wanted = settings.sprite_frames
@@ -178,6 +224,8 @@ def build_sprite(
             duration,
             Path(tmp),
             color_transfer,
+            projection,
+            stereo_mode,
         )
         if not frames:
             raise FFmpegError("Keine Einzelbilder fuer die Vorschau erhalten")

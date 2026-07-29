@@ -90,6 +90,8 @@ def job_poster(job: sqlite3.Row) -> None:
         destination,
         clip["duration"],
         clip["color_transfer"],
+        projection=clip["projection"],
+        stereo_mode=clip["stereo_mode"],
     )
     get_conn().execute(
         "UPDATE clips SET poster_status='ready', updated_at=datetime('now') WHERE id=?",
@@ -165,7 +167,12 @@ def job_sprite(job: sqlite3.Row) -> None:
         return
 
     info = preview.build_sprite(
-        source, paths.sprite_path(clip["id"]), clip["duration"], transfer
+        source,
+        paths.sprite_path(clip["id"]),
+        clip["duration"],
+        transfer,
+        projection=clip["projection"],
+        stereo_mode=clip["stereo_mode"],
     )
     get_conn().execute(
         "UPDATE clips SET sprite_status='ready', sprite_cols=?, sprite_rows=?, "
@@ -201,4 +208,11 @@ def job_embed(job: sqlite3.Row) -> None:
         _mark_missing(clip["id"])
         return
 
-    semantic.embed_clip(clip["id"], source, clip["duration"], transfer)
+    semantic.embed_clip(
+        clip["id"],
+        source,
+        clip["duration"],
+        transfer,
+        projection=clip["projection"],
+        stereo_mode=clip["stereo_mode"],
+    )

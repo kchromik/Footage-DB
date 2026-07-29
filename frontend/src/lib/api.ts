@@ -133,7 +133,13 @@ export const api = {
       method: 'POST',
     }),
 
-  initUpload: (filename: string, size: number, subdir = '') =>
+  tags: () =>
+    request<{
+      items: { id: number; name: string; category: string; count: number }[]
+      by_category: Record<string, { name: string; count: number }[]>
+    }>('/api/tags'),
+
+  initUpload: (filename: string, size: number, subdir = '', tags: string[] = []) =>
     request<{
       id: string
       chunk_size: number
@@ -142,7 +148,7 @@ export const api = {
       resumed: boolean
     }>('/api/uploads/init', {
       method: 'POST',
-      body: JSON.stringify({ filename, size, subdir }),
+      body: JSON.stringify({ filename, size, subdir, tags }),
     }),
   uploadChunk: async (id: string, index: number, blob: Blob, signal?: AbortSignal) => {
     const response = await fetch(`/api/uploads/${id}/chunk/${index}`, {

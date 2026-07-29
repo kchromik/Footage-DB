@@ -103,6 +103,8 @@ def embed_clip(
     source: Path,
     duration: float | None,
     color_transfer: str | None = None,
+    projection: str | None = None,
+    stereo_mode: str | None = None,
 ) -> None:
     """Berechnet den Bildvektor eines Clips aus mehreren Einzelbildern."""
     from PIL import Image
@@ -126,6 +128,8 @@ def embed_clip(
             duration,
             Path(tmp),
             color_transfer,
+            projection,
+            stereo_mode,
         )
         if not frames:
             conn.execute("UPDATE clips SET embed_status='failed' WHERE id=?", (clip_id,))
