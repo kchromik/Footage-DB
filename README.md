@@ -32,6 +32,63 @@ PGID=1000                            # id -g
 
 Oberflaeche: `http://<nas-ip>:8080`
 
+## Installation auf Unraid
+
+Es gibt ein fertiges Image unter `ghcr.io/kchromik/footage-db:latest` und eine
+Vorlage in `unraid/footagedb.xml`.
+
+**Vorbereitung.** Im Unraid-Terminal einen Schluessel erzeugen und notieren:
+
+```bash
+openssl rand -hex 32
+```
+
+**Weg 1: Vorlage laden.** Docker-Reiter, unten *Add Container*, oben bei
+*Template* die URL eintragen:
+
+```
+https://raw.githubusercontent.com/kchromik/Footage-DB/main/unraid/footagedb.xml
+```
+
+Danach nur noch anpassen: Footage-Ordner (Standard `/mnt/user/Footage`) und
+`FDB_SECRET_KEY`. Der Rest passt fuer Unraid bereits.
+
+**Weg 2: von Hand.** Docker-Reiter, *Add Container*, Advanced View:
+
+| Feld | Wert |
+|---|---|
+| Repository | `ghcr.io/kchromik/footage-db:latest` |
+| Network Type | Bridge |
+| Port | Container `8080`, Host `8080` |
+| Path | Container `/media`, Host dein Footage-Share, Read/Write |
+| Path | Container `/data`, Host `/mnt/user/appdata/footagedb`, Read/Write |
+| Variable | `FDB_SECRET_KEY` = der erzeugte Schluessel |
+| Variable | `PUID` = `99`, `PGID` = `100`, `TZ` = `Europe/Berlin` |
+
+**Weg 3: Docker Compose.** Mit dem Plugin *Compose Manager* aus den Community
+Applications: neuen Stack anlegen, die `docker-compose.yml` aus dem Repo
+einfuegen und daneben eine `.env` nach dem Muster der `.env.example` pflegen.
+
+### Worauf du auf Unraid achten solltest
+
+- **PUID 99 und PGID 100.** Das ist `nobody:users`, dem auf Unraid die Shares
+  gehoeren. Mit den sonst ueblichen 1000/1000 duerfte FootageDB nichts
+  schreiben, Uploads und Einsortieren wuerden scheitern.
+- **Das Datenverzeichnis waechst mit.** Dort liegen Previews und
+  Vorschaubilder, grob 5 Prozent der Groesse deines Footage-Ordners, plus
+  600 MB fuer das Suchmodell. Bei 2 TB Footage sind das rund 100 GB. Passt das
+  nicht auf deinen Cache, leg `/data` auf ein Share mit Platz.
+- **Datenbank auf SSD.** Wenn das Share auf dem Array liegt, wird die
+  Oberflaeche zaeh. Cache-Prefer ist die richtige Einstellung.
+- **Hardware-Encoding.** Hat deine CPU eine Intel-iGPU, unter *Extra
+  Parameters* `--device=/dev/dri` eintragen. FootageDB prueft beim Start
+  selbst, ob das nutzbar ist, und faellt sonst still auf die CPU zurueck. Ob es
+  greift, steht unter "Bibliothek in Zahlen".
+- **Image privat oder oeffentlich.** Nach dem ersten CI-Lauf liegt das Image in
+  der GitHub Container Registry und ist zunaechst privat. Auf der Paketseite
+  unter *Package settings* auf *Public* stellen, sonst muss sich Unraid vorher
+  mit `docker login ghcr.io` anmelden.
+
 ## Einrichtungsassistent
 
 Beim ersten Aufruf fuehrt ein Assistent durch die Einrichtung:
