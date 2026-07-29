@@ -1,0 +1,40 @@
+services:
+  footagedb:
+    # Zum Bauen aus dem Quellcode:
+    build: .
+    # Alternativ ein fertiges Image aus der GitHub Container Registry ziehen:
+    # image: ghcr.io/kchromik/footage-db:latest
+    container_name: footagedb
+    restart: unless-stopped
+    ports:
+      - "${FDB_PORT:-8080}:8080"
+    environment:
+      FDB_AUTH_USER: ${FDB_AUTH_USER:-admin}
+      FDB_AUTH_PASSWORD: ${FDB_AUTH_PASSWORD:?FDB_AUTH_PASSWORD fehlt in der .env}
+      FDB_SECRET_KEY: ${FDB_SECRET_KEY:?FDB_SECRET_KEY fehlt in der .env}
+      FDB_WORKER_COUNT: ${FDB_WORKER_COUNT:-2}
+      FDB_PROXY_HEIGHT: ${FDB_PROXY_HEIGHT:-720}
+      FDB_PROXY_CRF: ${FDB_PROXY_CRF:-26}
+      FDB_HWACCEL: ${FDB_HWACCEL:-auto}
+      FDB_SEMANTIC_ENABLED: ${FDB_SEMANTIC_ENABLED:-true}
+      FDB_RESCAN_INTERVAL_MINUTES: ${FDB_RESCAN_INTERVAL_MINUTES:-60}
+      FDB_ORGANIZE_UPLOADS: ${FDB_ORGANIZE_UPLOADS:-true}
+      # leer lassen heisst: Standard {year}/{year}-{month}/{camera}
+      FDB_ORGANIZE_PATTERN: ${FDB_ORGANIZE_PATTERN:-}
+      FDB_LOG_LEVEL: ${FDB_LOG_LEVEL:-INFO}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: ${TZ:-Europe/Berlin}
+    volumes:
+      - ${FDB_MEDIA_PATH:?FDB_MEDIA_PATH fehlt in der .env}:/media
+      - ${FDB_DATA_PATH:-./data}:/data
+    # Hardware-Encoding (Intel QuickSync) freischalten: die naechsten zwei
+    # Zeilen einkommentieren. Ohne das laeuft alles per CPU, nur langsamer.
+    # devices:
+    #   - /dev/dri:/dev/dri
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s

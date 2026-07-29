@@ -1,0 +1,13 @@
+.git
+.github
+data
+media
+testmedia
+**/node_modules
+**/__pycache__
+**/.venv
+frontend/dist
+backend/static
+.env
+*.md
+!README.md
