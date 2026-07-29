@@ -211,6 +211,63 @@ class TestKompletterDurchlauf:
         # Automatisch nach Jahr/Monat/Kamera einsortiert
         assert fertig["path"].count("/") == 3
 
+    def test_upload_ueber_dateisystemgrenze(self, client, media_root, tmp_path, monkeypatch):
+        """Auf einem NAS sind /data und /media getrennte Mounts.
+
+        Dann schlaegt ein blosses Umbenennen mit EXDEV fehl, die fertige Datei
+        muss stattdessen kopiert werden.
+        """
+        import errno
+        import os as os_module
+
+        from app.api import uploads as upload_api
+
+        # Zwischenablage ins Datenverzeichnis zwingen, so als waere der
+        # Medienordner nicht beschreibbar
+        upload_api.staging_dir.cache_clear()
+        monkeypatch.setattr(upload_api, "staging_dir", lambda: settings.uploads_dir)
+
+        # Sowohl rename als auch replace abfangen: shutil.move nutzt rename,
+        # Path.replace nutzt replace. Nur beides zusammen bildet eine echte
+        # Dateisystemgrenze nach.
+        def grenze(echte_funktion):
+            def wrapper(src, dst, *args, **kwargs):
+                if str(settings.uploads_dir) in str(src):
+                    raise OSError(errno.EXDEV, "Invalid cross-device link")
+                return echte_funktion(src, dst, *args, **kwargs)
+
+            return wrapper
+
+        monkeypatch.setattr(os_module, "rename", grenze(os_module.rename))
+        monkeypatch.setattr(os_module, "replace", grenze(os_module.replace))
+
+        quelle = make_clip(tmp_path / "Grenze.MP4", seconds=1.0, size="320x180")
+        daten = quelle.read_bytes()
+
+        init = client.post(
+            "/api/uploads/init", json={"filename": "Grenze.MP4", "size": len(daten)}
+        ).json()
+        for index in range(init["chunk_count"]):
+            teil = daten[
+                index * init["chunk_size"] : (index + 1) * init["chunk_size"]
+            ]
+            client.put(f"/api/uploads/{init['id']}/chunk/{index}", content=teil)
+
+        antwort = client.post(f"/api/uploads/{init['id']}/complete")
+        assert antwort.status_code == 200, antwort.text
+        ziel = media_root / antwort.json()["path"]
+        assert ziel.exists()
+        assert ziel.read_bytes() == daten
+        # Die Zwischendatei darf nicht liegenbleiben
+        assert not list(settings.uploads_dir.glob("*.part"))
+
+    def test_zwischenablage_liegt_im_medienordner(self, client, media_root):
+        """Wenn moeglich neben dem Ziel, damit am Ende nur umbenannt wird."""
+        from app.api import uploads as upload_api
+
+        upload_api.staging_dir.cache_clear()
+        assert upload_api.staging_dir() == media_root / upload_api.STAGING_DIRNAME
+
     def test_unvollstaendiger_upload_wird_abgelehnt(self, client, media_root):
         init = client.post(
             "/api/uploads/init", json={"filename": "Halb.MP4", "size": 20_000_000}

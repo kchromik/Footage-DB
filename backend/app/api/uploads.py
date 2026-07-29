@@ -7,8 +7,10 @@ seiner Position in einer Datei, dadurch entfaellt das Zusammensetzen.
 
 from __future__ import annotations
 
+import functools
 import logging
 import os
+import shutil
 import uuid
 from pathlib import Path
 
@@ -30,9 +32,49 @@ router = APIRouter(prefix="/api/uploads", tags=["uploads"], dependencies=[Depend
 
 MAX_SIZE = 500 * 1024 * 1024 * 1024  # 500 GB, faengt nur Unsinn ab
 
+# Zwischenablage fuer laufende Uploads, versteckt im Medienordner
+STAGING_DIRNAME = ".footagedb-incoming"
+
+
+@functools.lru_cache(maxsize=1)
+def staging_dir() -> Path:
+    """Wo die Bloecke waehrend des Uploads landen.
+
+    Am Ende wird die fertige Datei nur umbenannt. Das geht nur innerhalb
+    desselben Dateisystems, deshalb liegt die Zwischendatei moeglichst schon
+    im Medienordner. Auf einem NAS sind /data und /media meist getrennte
+    Mounts, und eine 30-GB-Datei erst auf den Cache und dann noch einmal auf
+    den Share zu schreiben waere doppelte Arbeit und doppelter Platzbedarf.
+
+    Laesst sich dort nicht schreiben, faellt es auf das Datenverzeichnis
+    zurueck. Dann kopiert shutil.move eben ueber die Dateisystemgrenze.
+    """
+    candidate = settings.media_root / STAGING_DIRNAME
+    try:
+        candidate.mkdir(parents=True, exist_ok=True)
+        probe = candidate / ".schreibtest"
+        probe.write_bytes(b"ok")
+        probe.unlink()
+        return candidate
+    except OSError as exc:
+        log.warning(
+            "Medienordner nicht beschreibbar (%s), Uploads werden in %s "
+            "zwischengelagert und am Ende kopiert",
+            exc,
+            settings.uploads_dir,
+        )
+        settings.uploads_dir.mkdir(parents=True, exist_ok=True)
+        return settings.uploads_dir
+
 
 def _part_file(upload_id: str) -> Path:
-    return settings.uploads_dir / f"{upload_id}.part"
+    # Eine bereits begonnene Zwischendatei am alten Ort weiterverwenden,
+    # damit angefangene Uploads einen Neustart ueberleben
+    legacy = settings.uploads_dir / f"{upload_id}.part"
+    preferred = staging_dir() / f"{upload_id}.part"
+    if legacy != preferred and legacy.exists() and not preferred.exists():
+        return legacy
+    return preferred
 
 
 class InitRequest(BaseModel):
@@ -70,8 +112,9 @@ def init_upload(payload: InitRequest) -> dict:
     chunk_count = max(1, -(-payload.size // chunk_size))
     upload_id = uuid.uuid4().hex
 
-    settings.uploads_dir.mkdir(parents=True, exist_ok=True)
-    _part_file(upload_id).touch()
+    part = _part_file(upload_id)
+    part.parent.mkdir(parents=True, exist_ok=True)
+    part.touch()
 
     conn.execute(
         "INSERT INTO uploads(id, filename, size_bytes, chunk_size, chunk_count, subdir) "
@@ -187,7 +230,13 @@ def complete_upload(upload_id: str) -> dict:
     target_rel = _target_path(part, row["filename"], row["subdir"])
     destination = settings.media_root / target_rel
     destination.parent.mkdir(parents=True, exist_ok=True)
-    part.replace(destination)
+    # shutil.move statt Path.replace: benennt innerhalb eines Dateisystems nur
+    # um und kopiert nur, wenn Quelle und Ziel auf verschiedenen Mounts liegen
+    shutil.move(str(part), str(destination))
+    try:
+        os.chmod(destination, 0o664)
+    except OSError:
+        pass
 
     stat = destination.stat()
     clip_id, _ = library.upsert_scanned_file(target_rel, stat)

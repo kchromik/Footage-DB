@@ -26,6 +26,7 @@ IGNORED_DIRS = {
     "@Recycle",
     "lost+found",
     ".footagedb",
+    ".footagedb-incoming",  # Zwischenablage laufender Uploads
 }
 
 
