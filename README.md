@@ -43,27 +43,40 @@ Vorlage in `unraid/footagedb.xml`.
 openssl rand -hex 32
 ```
 
-**Weg 1: Vorlage laden.** Docker-Reiter, unten *Add Container*, oben bei
-*Template* die URL eintragen:
+**Weg 1: Vorlage laden.** Das Feld *Template* unter *Add Container* ist ein
+Auswahlmenue, dort laesst sich keine URL eintragen. Die Vorlage kommt stattdessen
+in den Vorlagenordner auf dem USB-Stick, danach steht sie im Menue:
 
+```bash
+mkdir -p /boot/config/plugins/dockerMan/templates-user
+wget -O /boot/config/plugins/dockerMan/templates-user/my-FootageDB.xml \
+  https://raw.githubusercontent.com/kchromik/Footage-DB/main/unraid/footagedb.xml
 ```
-https://raw.githubusercontent.com/kchromik/Footage-DB/main/unraid/footagedb.xml
-```
 
-Danach nur noch anpassen: Footage-Ordner (Standard `/mnt/user/Footage`) und
-`FDB_SECRET_KEY`. Der Rest passt fuer Unraid bereits.
+Docker-Seite neu laden, *Add Container*, unter *Template* den Eintrag
+**FootageDB** waehlen. Danach nur noch anpassen: Footage-Ordner (Standard
+`/mnt/user/Footage`) und `FDB_SECRET_KEY`. Der Rest passt fuer Unraid bereits.
 
-**Weg 2: von Hand.** Docker-Reiter, *Add Container*, Advanced View:
+**Weg 2: von Hand.** Docker-Reiter, *Add Container*, oben rechts auf *Advanced
+View* schalten:
 
 | Feld | Wert |
 |---|---|
 | Repository | `ghcr.io/kchromik/footage-db:latest` |
 | Network Type | Bridge |
-| Port | Container `8080`, Host `8080` |
-| Path | Container `/media`, Host dein Footage-Share, Read/Write |
-| Path | Container `/data`, Host `/mnt/user/appdata/footagedb`, Read/Write |
-| Variable | `FDB_SECRET_KEY` = der erzeugte Schluessel |
-| Variable | `PUID` = `99`, `PGID` = `100`, `TZ` = `Europe/Berlin` |
+| WebUI | `http://[IP]:[PORT:8080]/` |
+
+Der Rest ueber *Add another Path, Port, Variable, Label or Device*:
+
+| Typ | Container-Pfad oder Key | Wert |
+|---|---|---|
+| Port | `8080` | `8080`, TCP |
+| Path | `/media` | dein Footage-Share, Read/Write |
+| Path | `/data` | `/mnt/user/appdata/footagedb`, Read/Write |
+| Variable | `FDB_SECRET_KEY` | der erzeugte Schluessel |
+| Variable | `PUID` | `99` |
+| Variable | `PGID` | `100` |
+| Variable | `TZ` | `Europe/Berlin` |
 
 **Weg 3: Docker Compose.** Mit dem Plugin *Compose Manager* aus den Community
 Applications: neuen Stack anlegen, die `docker-compose.yml` aus dem Repo
