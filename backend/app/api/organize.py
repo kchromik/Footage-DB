@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from .. import organize as service
 from ..config import settings
+from ..settings_store import runtime
 from .deps import require_user
 
 router = APIRouter(
@@ -28,7 +29,7 @@ def create_plan(payload: PlanRequest | None = None) -> dict:
     data["preview"] = data["moves"][:PREVIEW_LIMIT]
     data["truncated"] = len(data["moves"]) > PREVIEW_LIMIT
     del data["moves"]
-    data["pattern"] = settings.pattern
+    data["pattern"] = runtime.organize_pattern
     return data
 
 

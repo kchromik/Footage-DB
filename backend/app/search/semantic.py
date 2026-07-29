@@ -18,6 +18,7 @@ from ..config import settings
 from ..db import get_conn
 from ..events import bus
 from ..media import preview
+from ..settings_store import runtime
 from .clip_model import EMBED_DIM, ModelUnavailable, model
 
 log = logging.getLogger(__name__)
@@ -189,7 +190,7 @@ def search(text: str, limit: int = 300, allowed: set[int] | None = None):
 
 def status() -> dict:
     return {
-        "enabled": settings.semantic_enabled,
+        "enabled": runtime.semantic_enabled,
         "model_status": model.status,
         "ready": model.ready,
         "indexed": index.size if index._loaded else _count_embeddings(),

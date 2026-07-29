@@ -1,4 +1,15 @@
-import type { Clip, ClipPage, Filters, MoveBatch, MovePlan, Stats } from './types'
+import type {
+  AppSettings,
+  Clip,
+  ClipPage,
+  Filters,
+  MediaPreview,
+  MoveBatch,
+  MovePlan,
+  Stats,
+  SetupStatus,
+  SystemCheck,
+} from './types'
 
 export class ApiError extends Error {
   status: number
@@ -151,4 +162,25 @@ export const api = {
     request<{ ok: boolean }>(`/api/uploads/${id}`, { method: 'DELETE' }),
 
   zipUrl: (ids: number[]) => `/api/media/zip?ids=${ids.join(',')}`,
+
+  setupStatus: () => request<SetupStatus>('/api/setup/status'),
+  systemCheck: () => request<SystemCheck>('/api/setup/check'),
+  mediaPreview: () => request<MediaPreview>('/api/setup/preview'),
+  patternPreview: (pattern: string) =>
+    request<{ pattern: string; example: string }>('/api/setup/pattern-preview', {
+      method: 'POST',
+      body: JSON.stringify({ pattern }),
+    }),
+  completeSetup: (payload: Record<string, unknown>) =>
+    request<{ complete: boolean; scan_started: boolean }>('/api/setup/complete', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  settings: () => request<AppSettings>('/api/settings'),
+  updateSettings: (payload: Record<string, unknown>) =>
+    request<AppSettings>('/api/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
 }

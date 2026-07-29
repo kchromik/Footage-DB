@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from ..config import settings
-from .deps import AUTH_DISABLED, clear_session, current_user, issue_session, verify_credentials
+from .deps import auth_disabled, clear_session, current_user, issue_session, verify_credentials
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -58,7 +58,7 @@ def logout(response: Response) -> dict:
 def me(request: Request) -> dict:
     return {
         "user": current_user(request),
-        "auth_required": not AUTH_DISABLED,
+        "auth_required": not auth_disabled(),
         "app": "FootageDB",
         "media_root": str(settings.media_root),
     }

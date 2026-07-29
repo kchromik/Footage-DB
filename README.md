@@ -25,7 +25,6 @@ In der `.env` mindestens setzen:
 
 ```ini
 FDB_MEDIA_PATH=/volume1/BRoll        # dein Footage-Ordner auf dem NAS
-FDB_AUTH_PASSWORD=ein-gutes-passwort
 FDB_SECRET_KEY=<openssl rand -hex 32>
 PUID=1000                            # id -u
 PGID=1000                            # id -g
@@ -33,10 +32,33 @@ PGID=1000                            # id -g
 
 Oberflaeche: `http://<nas-ip>:8080`
 
-Beim ersten Start wird der Medienordner eingelesen, danach entstehen im
-Hintergrund Vorschaubilder, Previews und die Bildanalyse. Die Kacheln fuellen
-sich waehrenddessen nach und nach. Fuer die inhaltliche Suche werden einmalig
-rund 600 MB Modelldaten geladen.
+## Einrichtungsassistent
+
+Beim ersten Aufruf fuehrt ein Assistent durch die Einrichtung:
+
+1. **Systempruefung**: ist der Medienordner da, les- und beschreibbar, wie viel
+   Platz ist frei, sind ffmpeg und exiftool vorhanden, laesst sich die iGPU
+   nutzen
+2. **Zugang**: Benutzername und Passwort, gespeichert als scrypt-Hash in der
+   Datenbank. Steht in der `.env` schon ein Passwort, entfaellt der Schritt
+3. **Bibliothek**: zeigt, wie viele Dateien im Medienordner liegen und wie lange
+   die erste Verarbeitung ungefaehr dauert
+4. **Verarbeitung**: Qualitaet der Previews, gleichzeitige Aufgaben,
+   Hardware-Encoding, Suche nach Bildinhalt. Die Vorschlaege richten sich nach
+   der gefundenen Hardware
+5. **Ablage**: wohin hochgeladene Dateien wandern
+6. **Abschluss**: Zusammenfassung, danach startet der erste Scan
+
+Alle Werte lassen sich spaeter unter "Werkzeuge" wieder aendern, ohne den
+Container neu zu bauen.
+
+Solange kein Passwort gesetzt ist, ist die Oberflaeche ohne Anmeldung
+erreichbar. Ruf sie deshalb direkt nach dem Start auf und richte den Zugang
+ein, oder trag vorher ein `FDB_AUTH_PASSWORD` in die `.env`.
+
+Der erste Scan laeuft im Hintergrund: die Kacheln fuellen sich nach und nach,
+suchen kannst du sofort. Fuer die inhaltliche Suche werden einmalig rund 600 MB
+Modelldaten geladen.
 
 ## Volumes
 
@@ -109,9 +131,9 @@ Durchgang zurueck. Schema ueber `FDB_ORGANIZE_PATTERN`, verfuegbar sind
 | `FDB_ORGANIZE_UPLOADS` | true | Uploads direkt einsortieren |
 | `FDB_ORGANIZE_PATTERN` | `{year}/{year}-{month}/{camera}` | Ordnerschema |
 
-Vollstaendige Liste in der `.env.example`. Bleibt `FDB_AUTH_PASSWORD` leer,
-laeuft die Oberflaeche ohne Anmeldung. Das ist nur fuer ein abgeschottetes
-Heimnetz gedacht.
+Vollstaendige Liste in der `.env.example`. Was ueber den Assistenten oder unter
+"Werkzeuge" geaendert wird, landet in der Datenbank und gewinnt danach gegen die
+Umgebungsvariable.
 
 ## Entwicklung
 

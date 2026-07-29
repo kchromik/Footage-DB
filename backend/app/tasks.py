@@ -16,6 +16,7 @@ from .jobs import handler
 from .media import preview
 from .metadata.probe import probe_file
 from .metadata.rules import derive
+from .settings_store import runtime
 
 log = logging.getLogger(__name__)
 
@@ -121,7 +122,7 @@ def job_proxy(job: sqlite3.Row) -> list[tuple[str, int]] | None:
         return None
     conn = get_conn()
     follow: list[tuple[str, int]] = [("sprite", clip["id"])]
-    if settings.semantic_enabled:
+    if runtime.semantic_enabled:
         follow.append(("embed", clip["id"]))
 
     if _can_direct_play(clip):
@@ -189,7 +190,7 @@ def job_embed(job: sqlite3.Row) -> None:
     clip = _clip(job["clip_id"])
     if clip is None:
         return
-    if not settings.semantic_enabled:
+    if not runtime.semantic_enabled:
         get_conn().execute(
             "UPDATE clips SET embed_status='skipped' WHERE id=?", (clip["id"],)
         )

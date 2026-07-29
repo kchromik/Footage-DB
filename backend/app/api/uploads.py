@@ -21,6 +21,7 @@ from ..db import get_conn
 from ..events import bus
 from ..metadata.probe import probe_file
 from ..metadata.rules import derive
+from ..settings_store import runtime
 from ..util import safe_join, safe_name
 from .deps import require_user
 
@@ -213,7 +214,7 @@ def _target_path(temp_file: Path, filename: str, subdir: str) -> str:
         base = subdir.strip("/")
         return organize.unique_target(base, safe_name(filename), set())
 
-    if not settings.organize_uploads:
+    if not runtime.organize_uploads:
         return organize.unique_target("", safe_name(filename), set())
 
     try:

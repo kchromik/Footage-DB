@@ -151,6 +151,63 @@ export const EMPTY_FILTERS: Filters = {
   sort: 'recorded_desc',
 }
 
+export interface SetupStatus {
+  complete: boolean
+  has_password: boolean
+  password_from_env: boolean
+  auth_user: string
+  logged_in: boolean
+  media_root: string
+  media_exists: boolean
+}
+
+export interface SystemCheck {
+  media: {
+    path: string
+    exists: boolean
+    readable: boolean
+    writable: boolean
+    free_label: string
+    total_label: string
+    used_percent: number
+  }
+  data: { path: string; writable: boolean; free_label: string; total_label: string }
+  tools: { ffmpeg: string | null; ffprobe: string | null; exiftool: string | null }
+  hwaccel: { available: boolean; device: string; device_present: boolean }
+  cpu_count: number
+  internet: boolean
+  warnings: string[]
+  ok: boolean
+}
+
+export interface MediaPreview {
+  available: boolean
+  count: number
+  truncated?: boolean
+  size_label?: string
+  folders: { name: string; count: number }[]
+  kinds: Record<string, number>
+  newest: string | null
+  oldest: string | null
+  estimate_minutes: number
+}
+
+export interface AppSettings {
+  auth_user: string
+  has_password: boolean
+  password_from_env: boolean
+  proxy_height: number
+  proxy_crf: number
+  hwaccel: string
+  hwaccel_active: string
+  semantic_enabled: boolean
+  worker_count: number
+  organize_uploads: boolean
+  organize_pattern: string
+  rescan_interval_minutes: number
+  media_root: string
+}
+
 export interface MovePlan {
   count: number
   already_sorted: number

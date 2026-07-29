@@ -14,6 +14,7 @@ from ..db import get_conn, reindex_fts
 from ..search import query as q
 from ..search import semantic
 from ..serializers import load_tags, serialize_clip
+from ..settings_store import runtime
 from .deps import require_user
 
 log = logging.getLogger(__name__)
@@ -92,7 +93,7 @@ def list_clips(
     if filters.q:
         text_ids = q.text_match_ids(filters.q)
         semantic_hits: list[tuple[int, float]] = []
-        wants_semantic = filters.mode in ("auto", "semantic") and settings.semantic_enabled
+        wants_semantic = filters.mode in ("auto", "semantic") and runtime.semantic_enabled
         if wants_semantic and (filters.mode == "semantic" or len(text_ids) < 25):
             semantic_hits = semantic.search(filters.q, limit=SEMANTIC_POOL)
             semantic_hits = [

@@ -1,4 +1,10 @@
-"""Anmeldung per signiertem Session-Cookie."""
+"""Anmeldung per signiertem Session-Cookie.
+
+Das Passwort kann aus zwei Quellen kommen: aus der `.env` oder aus dem
+Einrichtungsassistenten (dann liegt es als scrypt-Hash in der Datenbank).
+Der Hash aus der Datenbank hat Vorrang. Ist beides leer, laeuft die Oberflaeche
+ohne Anmeldung, das ist nur fuer ein abgeschottetes Heimnetz gedacht.
+"""
 
 from __future__ import annotations
 
@@ -10,6 +16,7 @@ from fastapi import HTTPException, Request, Response, status
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from ..config import settings
+from ..settings_store import runtime, verify_password
 
 log = logging.getLogger(__name__)
 
@@ -25,19 +32,26 @@ if not _secret:
 
 _serializer = URLSafeTimedSerializer(_secret, salt="fdb-session")
 
-# Ohne gesetztes Passwort laeuft die App ohne Anmeldung (nur fuer den
-# abgeschotteten Heimnetz-Betrieb gedacht).
-AUTH_DISABLED = not settings.auth_password.strip()
-if AUTH_DISABLED:
-    log.warning(
-        "FDB_AUTH_PASSWORD ist leer: die Oberflaeche ist ohne Anmeldung erreichbar."
-    )
+
+def auth_disabled() -> bool:
+    """Wahr, solange nirgends ein Passwort hinterlegt ist."""
+    try:
+        return not runtime.has_password
+    except Exception:  # noqa: BLE001 - vor der Datenbank-Initialisierung
+        return not settings.auth_password.strip()
 
 
 def verify_credentials(username: str, password: str) -> bool:
-    user_ok = hmac.compare_digest(username.strip(), settings.auth_user.strip())
-    pass_ok = hmac.compare_digest(password, settings.auth_password)
-    return user_ok and pass_ok
+    expected_user = runtime.auth_user.strip()
+    if not hmac.compare_digest(username.strip(), expected_user):
+        return False
+
+    stored = runtime.password_hash
+    if stored:
+        return verify_password(password, stored)
+    if settings.auth_password:
+        return hmac.compare_digest(password, settings.auth_password)
+    return False
 
 
 def issue_session(response: Response, username: str, secure: bool = False) -> None:
@@ -58,8 +72,8 @@ def clear_session(response: Response) -> None:
 
 
 def current_user(request: Request) -> str | None:
-    if AUTH_DISABLED:
-        return settings.auth_user or "lokal"
+    if auth_disabled():
+        return runtime.auth_user or "lokal"
     token = request.cookies.get(COOKIE_NAME)
     if not token:
         return None

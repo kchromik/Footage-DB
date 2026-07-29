@@ -3,6 +3,7 @@ import { api } from '../lib/api'
 import type { MoveBatch, MovePlan, Stats } from '../lib/types'
 import { formatDate } from '../lib/format'
 import { IconRefresh } from './Icons'
+import { SettingsPanel } from './SettingsPanel'
 
 interface Props {
   stats: Stats | null
@@ -44,6 +45,8 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
         <h2>Werkzeuge</h2>
         <p>Bibliothek einlesen, Dateien einsortieren und aufraeumen.</p>
       </div>
+
+      <SettingsPanel notify={notify} />
 
       <div className="card-block">
         <h3>Bibliothek einlesen</h3>

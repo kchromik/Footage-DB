@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, ApiError } from './lib/api'
 import { EMPTY_FILTERS } from './lib/types'
-import type { Clip, Facets, Filters, Stats } from './lib/types'
+import type { Clip, Facets, Filters, SetupStatus, Stats } from './lib/types'
 import { useEvents } from './lib/useEvents'
 import { LOOK_LABEL } from './lib/format'
 import type { Look } from './lib/types'
@@ -9,6 +9,7 @@ import { ClipCard } from './components/ClipCard'
 import { ClipDetail } from './components/ClipDetail'
 import { FilterPanel } from './components/FilterPanel'
 import { Login } from './components/Login'
+import { SetupWizard } from './components/SetupWizard'
 import { StatsView } from './components/StatsView'
 import { ToolsView } from './components/ToolsView'
 import { UploadView } from './components/UploadView'
@@ -30,6 +31,7 @@ import {
 } from './components/Icons'
 
 type View = 'library' | 'upload' | 'stats' | 'tools'
+type Phase = 'pruefen' | 'anmelden' | 'wizard' | 'bereit'
 
 const PAGE_SIZE = 60
 
@@ -44,7 +46,8 @@ const SORT_OPTIONS: [string, string][] = [
 ]
 
 export default function App() {
-  const [authState, setAuthState] = useState<'pruefen' | 'anmelden' | 'bereit'>('pruefen')
+  const [phase, setPhase] = useState<Phase>('pruefen')
+  const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
   const [view, setView] = useState<View>('library')
   const [panelOpen, setPanelOpen] = useState(true)
   const [dense, setDense] = useState(false)
@@ -75,12 +78,26 @@ export default function App() {
 
   /* ------------------------------------------------------------ Anmeldung */
 
-  useEffect(() => {
-    api
-      .me()
-      .then((info) => setAuthState(info.user ? 'bereit' : 'anmelden'))
-      .catch(() => setAuthState('anmelden'))
+  /* Zuerst klaeren, ob die Einrichtung schon durch ist. Vor dem Assistenten
+     gibt es je nach Konfiguration noch gar kein Passwort. */
+  const bootstrap = useCallback(async () => {
+    try {
+      const status = await api.setupStatus()
+      setSetupStatus(status)
+      if (!status.complete) {
+        setPhase(status.has_password && !status.logged_in ? 'anmelden' : 'wizard')
+        return
+      }
+      const info = await api.me()
+      setPhase(info.user ? 'bereit' : 'anmelden')
+    } catch {
+      setPhase('anmelden')
+    }
   }, [])
+
+  useEffect(() => {
+    void bootstrap()
+  }, [bootstrap])
 
   /* ------------------------------------------------------------ Suchfeld */
 
@@ -114,7 +131,7 @@ export default function App() {
         if (replace) setFreshCount(0)
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
-          setAuthState('anmelden')
+          setPhase('anmelden')
         } else {
           notify(`Laden fehlgeschlagen: ${(error as Error).message}`, 'error')
         }
@@ -127,9 +144,9 @@ export default function App() {
   )
 
   useEffect(() => {
-    if (authState !== 'bereit') return
+    if (phase !== 'bereit') return
     void loadPage(0, true)
-  }, [authState, loadPage])
+  }, [phase, loadPage])
 
   const refreshStats = useCallback(() => {
     api
@@ -139,11 +156,11 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (authState !== 'bereit') return
+    if (phase !== 'bereit') return
     refreshStats()
     const timer = window.setInterval(refreshStats, 20000)
     return () => window.clearInterval(timer)
-  }, [authState, refreshStats])
+  }, [phase, refreshStats])
 
   /* Unendliches Nachladen beim Scrollen */
   useEffect(() => {
@@ -217,7 +234,7 @@ export default function App() {
       },
       [applyPending, refreshStats],
     ),
-    authState === 'bereit',
+    phase === 'bereit',
   )
 
   /* ------------------------------------------------------------ Auswahl */
@@ -334,7 +351,7 @@ export default function App() {
 
   const busy = (stats?.queue.running ?? 0) > 0 || stats?.scanning
 
-  if (authState === 'pruefen') {
+  if (phase === 'pruefen') {
     return (
       <div className="login-page">
         <div className="spinner" />
@@ -342,8 +359,21 @@ export default function App() {
     )
   }
 
-  if (authState === 'anmelden') {
-    return <Login onSuccess={() => setAuthState('bereit')} />
+  if (phase === 'anmelden') {
+    return <Login onSuccess={() => void bootstrap()} />
+  }
+
+  if (phase === 'wizard' && setupStatus) {
+    return (
+      <SetupWizard
+        status={setupStatus}
+        onDone={() => {
+          setPhase('bereit')
+          notify('Einrichtung abgeschlossen', 'ok')
+          refreshStats()
+        }}
+      />
+    )
   }
 
   return (
@@ -376,7 +406,7 @@ export default function App() {
           aria-label="Abmelden"
           onClick={async () => {
             await api.logout()
-            setAuthState('anmelden')
+            setPhase('anmelden')
           }}
         >
           <IconLogout size={17} />

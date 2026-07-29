@@ -17,6 +17,7 @@ from pathlib import Path, PurePosixPath
 from . import library
 from .config import settings
 from .db import get_conn
+from .settings_store import runtime
 from .util import safe_name
 
 log = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ def camera_folder(label: str | None) -> str:
 
 def target_directory(recorded_at: str | None, created_at: str, camera: str | None) -> str:
     when = _parse(recorded_at) or _parse(created_at) or datetime.now()
-    return settings.pattern.format(
+    return runtime.organize_pattern.format(
         year=f"{when.year:04d}",
         month=f"{when.month:02d}",
         day=f"{when.day:02d}",
@@ -276,7 +277,7 @@ def _log_move(conn, batch: str, move: PlannedMove, state: str, error: str | None
 def target_for_new_file(filename: str, recorded_at: datetime | None, camera: str | None) -> str:
     """Zielpfad fuer eine frisch hochgeladene Datei."""
     when = recorded_at or datetime.now()
-    directory = settings.pattern.format(
+    directory = runtime.organize_pattern.format(
         year=f"{when.year:04d}",
         month=f"{when.month:02d}",
         day=f"{when.day:02d}",

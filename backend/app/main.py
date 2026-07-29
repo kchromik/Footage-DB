@@ -16,7 +16,18 @@ from . import jobs, scanner, tasks  # noqa: F401  (tasks registriert die Job-Han
 from .config import settings
 from .db import close_conn, init_db
 from .events import bus
-from .api import auth, clips, collections, media, organize, system, tags, uploads
+from .settings_store import runtime
+from .api import (
+    auth,
+    clips,
+    collections,
+    media,
+    organize,
+    setup,
+    system,
+    tags,
+    uploads,
+)
 
 log = logging.getLogger("app")
 
@@ -40,7 +51,7 @@ def _preload_semantic() -> None:
         semantic.index.load()
     except Exception:  # noqa: BLE001
         log.exception("Vektorindex konnte nicht geladen werden")
-    if settings.semantic_enabled:
+    if runtime.semantic_enabled:
         try:
             model.ensure_loaded()
         except Exception as exc:  # noqa: BLE001
@@ -49,7 +60,7 @@ def _preload_semantic() -> None:
 
 
 async def _periodic_rescan() -> None:
-    interval = max(0, settings.rescan_interval_minutes) * 60
+    interval = max(0, runtime.rescan_interval_minutes) * 60
     if interval <= 0:
         return
     while True:
@@ -74,6 +85,7 @@ async def lifespan(app: FastAPI):
     configure_logging()
     settings.ensure_dirs()
     init_db()
+    runtime.reload()
     bus.bind_loop(asyncio.get_running_loop())
 
     log.info("Medienordner: %s", settings.media_root)
@@ -89,10 +101,12 @@ async def lifespan(app: FastAPI):
     if cleaned:
         log.info("%d abgebrochene Uploads aufgeraeumt", cleaned)
 
-    jobs.start_pool(settings.worker_count)
+    jobs.start_pool(runtime.worker_count)
     threading.Thread(target=_preload_semantic, name="semantic-preload", daemon=True).start()
 
-    if settings.scan_on_start:
+    # Vor der Einrichtung nicht ungefragt losrennen, der Assistent startet
+    # den ersten Scan selbst.
+    if settings.scan_on_start and runtime.setup_complete:
         scanner.scan_async()
     scanner.start_watcher()
 
@@ -118,6 +132,8 @@ app = FastAPI(
 )
 
 app.include_router(auth.router)
+app.include_router(setup.router)
+app.include_router(setup.settings_router)
 app.include_router(system.router)
 app.include_router(clips.router)
 app.include_router(media.router)

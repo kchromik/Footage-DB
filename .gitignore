@@ -10,11 +10,16 @@ venv/
 node_modules/
 frontend/dist/
 backend/static/
+frontend/tsconfig.tsbuildinfo
 
-# Laufzeitdaten
-data/
-media/
-testmedia/
+# Laufzeitdaten. Fuehrender Schraegstrich, sonst wuerde "media/" auch
+# backend/app/media/ ausschliessen.
+/data/
+/media/
+/testmedia/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
 *.db
 *.db-wal
 *.db-shm
