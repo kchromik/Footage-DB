@@ -94,9 +94,10 @@ einfuegen und daneben eine `.env` nach dem Muster der `.env.example` pflegen.
 - **Datenbank auf SSD.** Wenn das Share auf dem Array liegt, wird die
   Oberflaeche zaeh. Cache-Prefer ist die richtige Einstellung.
 - **Hardware-Encoding.** Hat deine CPU eine Intel-iGPU, unter *Extra
-  Parameters* `--device=/dev/dri` eintragen. FootageDB prueft beim Start
-  selbst, ob das nutzbar ist, und faellt sonst still auf die CPU zurueck. Ob es
-  greift, steht unter "Bibliothek in Zahlen".
+  Parameters* `--device=/dev/dri` eintragen. Die noetigen VAAPI-Treiber sind im
+  Image enthalten. FootageDB prueft beim Start selbst, ob das nutzbar ist, und
+  faellt sonst still auf die CPU zurueck. Ob es greift, steht unter "Bibliothek
+  in Zahlen". Zum Nachsehen im Container: `vainfo`.
 - **Image privat oder oeffentlich.** Nach dem ersten CI-Lauf liegt das Image in
   der GitHub Container Registry und ist zunaechst privat. Auf der Paketseite
   unter *Package settings* auf *Public* stellen, sonst muss sich Unraid vorher
