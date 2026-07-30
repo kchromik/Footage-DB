@@ -105,6 +105,37 @@ einfuegen und daneben eine `.env` nach dem Muster der `.env.example` pflegen.
   unter *Package settings* auf *Public* stellen, sonst muss sich Unraid vorher
   mit `docker login ghcr.io` anmelden.
 
+## Installation auf einem UGREEN NAS
+
+UGOS bringt im App Center eine Docker-App mit, die Compose versteht. Eine
+fertige Datei liegt in `ugos/docker-compose.yml`.
+
+1. **Ordner anlegen.** In der Dateiverwaltung einen Ordner fuer die Daten
+   erstellen, zum Beispiel `docker/footagedb` auf `volume1`.
+2. **Docker-App oeffnen**, links auf *Project*, dann *Create Project*.
+3. Name `footagedb` vergeben, als Pfad den eben angelegten Ordner waehlen und
+   den Inhalt von `ugos/docker-compose.yml` einfuegen.
+4. Vor dem Start zwei Zeilen pruefen: den Pfad deines Footage-Ordners
+   (`/volume1/Footage`) und den Port, falls 8080 schon belegt ist.
+5. Starten, danach `http://<nas-ip>:8080` aufrufen. Der Einrichtungsassistent
+   uebernimmt den Rest.
+
+### Rechte
+
+Das ist auf jedem NAS die haeufigste Huerde. Der Assistent zeigt unter
+*Systempruefung* an, wem dein Footage-Ordner gehoert und als wem der Container
+laeuft. Stimmen die Zahlen nicht ueberein und laesst sich nicht schreiben,
+nennt er dir direkt die richtigen Werte. Die traegst du im Projekt bei `PUID`
+und `PGID` ein und startest neu. Ohne SSH-Zugang ist das der einzige
+verlaessliche Weg, an diese Zahlen zu kommen.
+
+### Hardware-Encoding
+
+Erst ohne starten. Laeuft alles, im Projekt die zwei auskommentierten Zeilen
+fuer `/dev/dri` aktivieren und neu starten. Faehrt der Container danach nicht
+hoch, gibt es das Geraet nicht, dann wieder auskommentieren. Ob es greift,
+steht unter "Bibliothek in Zahlen".
+
 ## Einrichtungsassistent
 
 Beim ersten Aufruf fuehrt ein Assistent durch die Einrichtung:

@@ -1,0 +1,46 @@
+# FootageDB auf einem UGREEN NAS (UGOS Pro)
+#
+# Einsetzen ueber die Docker-App: Project -> Create Project -> diesen Inhalt
+# einfuegen. Vorher die drei mit ANPASSEN markierten Stellen pruefen.
+#
+# Ausfuehrliche Anleitung: https://github.com/kchromik/Footage-DB#installation-auf-einem-ugreen-nas
+
+services:
+  footagedb:
+    image: ghcr.io/kchromik/footage-db:latest
+    container_name: footagedb
+    restart: unless-stopped
+
+    ports:
+      # ANPASSEN, falls 8080 auf dem NAS schon belegt ist: linke Zahl aendern
+      - "8080:8080"
+
+    volumes:
+      # ANPASSEN: links der echte Pfad deines Footage-Ordners auf dem NAS
+      - /volume1/Footage:/media
+      # Datenbank, Vorschaubilder und Previews. Waechst mit der Bibliothek,
+      # rechne mit rund 5 Prozent der Groesse deines Footage-Ordners.
+      - /volume1/docker/footagedb:/data
+
+    environment:
+      # Schluessel fuer die Anmelde-Cookies. Schon zufaellig erzeugt, kann so
+      # bleiben. Aenderst du ihn, musst du dich einmal neu anmelden.
+      FDB_SECRET_KEY: "18a3a114d4f78a1e03aacd0a10c8f908d4c035171f738fb2d078f871fb2566a1"
+
+      # ANPASSEN, falls die Rechte nicht stimmen. Der Einrichtungsassistent
+      # zeigt unter Systempruefung an, wem dein Footage-Ordner gehoert und als
+      # wem der Container laeuft. Weichen die Zahlen ab, hier eintragen und
+      # den Container neu starten.
+      PUID: "1000"
+      PGID: "1000"
+
+      TZ: "Europe/Berlin"
+      FDB_AUTH_USER: "kevin"
+      FDB_WORKER_COUNT: "2"
+      FDB_SEMANTIC_ENABLED: "true"
+
+    # Hardware-Encoding ueber die Intel-Grafikeinheit. Erst ohne starten, dann
+    # diese zwei Zeilen einkommentieren und neu starten. Faehrt der Container
+    # danach nicht hoch, gibt es das Geraet nicht, dann wieder auskommentieren.
+    # devices:
+    #   - /dev/dri:/dev/dri

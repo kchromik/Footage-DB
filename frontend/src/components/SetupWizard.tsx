@@ -267,6 +267,19 @@ export function SetupWizard({ status, onDone }: Props) {
                         {check.data.free_label} frei
                       </span>
                     </div>
+                    <div
+                      className={`check-row${check.media.writable ? '' : ' bad'}`}
+                    >
+                      <i className="dot" />
+                      <span className="name">Rechte</span>
+                      <span className="value">
+                        Ordner gehoert {check.permissions.media_uid}:
+                        {check.permissions.media_gid}, Rechte {check.permissions.mode}
+                        <br />
+                        Container laeuft als {check.permissions.container_uid}:
+                        {check.permissions.container_gid}
+                      </span>
+                    </div>
                     <div className={`check-row${check.tools.ffmpeg ? '' : ' bad'}`}>
                       <i className="dot" />
                       <span className="name">ffmpeg</span>

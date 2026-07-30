@@ -81,6 +81,34 @@ def _disk(path: Path) -> dict:
                 "used_percent": 0}
 
 
+def _ownership(path: Path) -> dict:
+    """Wem gehoert der Ordner, und als wem laeuft der Container?
+
+    Auf einem NAS ist das die haeufigste Fehlerquelle. Ohne Zugang zur
+    Kommandozeile kann man die richtigen Werte fuer PUID und PGID sonst nur
+    raten, deshalb zeigt die Pruefung sie direkt an.
+    """
+    result = {
+        "container_uid": os.geteuid(),
+        "container_gid": os.getegid(),
+        "media_uid": None,
+        "media_gid": None,
+        "mode": None,
+    }
+    try:
+        info = path.stat()
+        result["media_uid"] = info.st_uid
+        result["media_gid"] = info.st_gid
+        result["mode"] = format(info.st_mode & 0o777, "04o")
+    except OSError:
+        pass
+    result["matches"] = (
+        result["media_uid"] in (None, result["container_uid"])
+        or result["media_gid"] == result["container_gid"]
+    )
+    return result
+
+
 def _writable(path: Path) -> bool:
     probe = path / ".footagedb-schreibtest"
     try:
@@ -101,21 +129,25 @@ def system_check(_: str = Depends(allow_setup)) -> dict:
     media_readable = media_exists and os.access(media, os.R_OK)
     media_writable = media_exists and _writable(media)
     data_writable = data.exists() and _writable(data)
+    rechte = _ownership(media)
 
     if not media_exists:
         warnings.append(
             f"Der Medienordner {media} ist nicht da. Pruef das Volume in der "
             "docker-compose.yml."
         )
-    elif not media_readable:
-        warnings.append(
-            "Der Medienordner ist nicht lesbar. Meist stimmen PUID und PGID nicht."
+    elif not media_readable or not media_writable:
+        was = "lesbar" if not media_readable else "beschreibbar"
+        hinweis = (
+            f"Der Medienordner ist nicht {was}. Er gehoert Benutzer "
+            f"{rechte['media_uid']} und Gruppe {rechte['media_gid']}, der Container "
+            f"laeuft als {rechte['container_uid']}:{rechte['container_gid']}. "
+            f"Setz PUID={rechte['media_uid']} und PGID={rechte['media_gid']} und "
+            "starte den Container neu."
         )
-    elif not media_writable:
-        warnings.append(
-            "In den Medienordner kann nicht geschrieben werden. Suchen und Herunterladen "
-            "geht trotzdem, Hochladen und Einsortieren nicht."
-        )
+        if not media_writable and media_readable:
+            hinweis += " Suchen und Herunterladen geht solange trotzdem."
+        warnings.append(hinweis)
     if not data_writable:
         warnings.append(
             "Ins Datenverzeichnis kann nicht geschrieben werden. Vorschaubilder und "
@@ -148,6 +180,7 @@ def system_check(_: str = Depends(allow_setup)) -> dict:
             **media_disk,
         },
         "data": {"path": str(data), "writable": data_writable, **data_disk},
+        "permissions": rechte,
         "tools": tools,
         "hwaccel": {
             "available": vaapi,

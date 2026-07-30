@@ -172,6 +172,14 @@ export interface SystemCheck {
     used_percent: number
   }
   data: { path: string; writable: boolean; free_label: string; total_label: string }
+  permissions: {
+    container_uid: number
+    container_gid: number
+    media_uid: number | null
+    media_gid: number | null
+    mode: string | null
+    matches: boolean
+  }
   tools: { ffmpeg: string | null; ffprobe: string | null; exiftool: string | null }
   hwaccel: { available: boolean; device: string; device_present: boolean }
   cpu_count: number
