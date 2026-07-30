@@ -7,6 +7,7 @@ seiner Position in einer Datei, dadurch entfaellt das Zusammensetzen.
 
 from __future__ import annotations
 
+import errno
 import functools
 import json
 import logging
@@ -68,6 +69,21 @@ def staging_dir() -> Path:
         return settings.uploads_dir
 
 
+def media_writable() -> bool:
+    """Direkter Schreibtest auf den Medienordner, ohne Zwischenspeicher.
+
+    Wird beim Anmelden eines Uploads geprueft, damit nicht erst 30 GB
+    uebertragen werden und der letzte Schritt dann scheitert.
+    """
+    probe = settings.media_root / ".footagedb-schreibtest"
+    try:
+        probe.write_bytes(b"ok")
+        probe.unlink()
+        return True
+    except OSError:
+        return False
+
+
 def _part_file(upload_id: str) -> Path:
     # Eine bereits begonnene Zwischendatei am alten Ort weiterverwenden,
     # damit angefangene Uploads einen Neustart ueberleben
@@ -93,6 +109,16 @@ def init_upload(payload: InitRequest) -> dict:
         raise HTTPException(
             status_code=400,
             detail=f"Dateityp wird nicht unterstuetzt: {Path(filename).suffix}",
+        )
+
+    if not media_writable():
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "In den Medienordner kann nicht geschrieben werden, deshalb sind "
+                "Uploads gerade nicht moeglich. Die Systempruefung unter Werkzeuge "
+                "zeigt, welche Benutzer-IDs noetig waeren."
+            ),
         )
 
     conn = get_conn()
@@ -247,7 +273,20 @@ def complete_upload(upload_id: str) -> dict:
     destination.parent.mkdir(parents=True, exist_ok=True)
     # shutil.move statt Path.replace: benennt innerhalb eines Dateisystems nur
     # um und kopiert nur, wenn Quelle und Ziel auf verschiedenen Mounts liegen
-    shutil.move(str(part), str(destination))
+    try:
+        shutil.move(str(part), str(destination))
+    except OSError as exc:
+        # Die uebertragenen Bloecke bleiben liegen, damit der Upload nach dem
+        # Beheben der Ursache ohne erneute Uebertragung fertig wird
+        log.error("Datei konnte nicht abgelegt werden: %s -> %s (%s)", part, destination, exc)
+        raise HTTPException(
+            status_code=507 if exc.errno == errno.ENOSPC else 503,
+            detail=(
+                f"Die Datei konnte nicht in {destination.parent} abgelegt werden: "
+                f"{exc.strerror}. Die uebertragenen Daten bleiben erhalten, nach dem "
+                "Beheben der Ursache genuegt ein erneuter Versuch mit derselben Datei."
+            ),
+        ) from exc
     try:
         os.chmod(destination, 0o664)
     except OSError:

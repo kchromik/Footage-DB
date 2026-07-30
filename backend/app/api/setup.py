@@ -130,6 +130,9 @@ def system_check(_: str = Depends(allow_setup)) -> dict:
     media_writable = media_exists and _writable(media)
     data_writable = data.exists() and _writable(data)
     rechte = _ownership(media)
+    daten_rechte = _ownership(data)
+    rechte["data_uid"] = daten_rechte["media_uid"]
+    rechte["data_gid"] = daten_rechte["media_gid"]
 
     if not media_exists:
         warnings.append(
@@ -150,10 +153,18 @@ def system_check(_: str = Depends(allow_setup)) -> dict:
             hinweis += (
                 "Das sieht nach einer Freigabe aus, deren Rechte ueber die "
                 "Rechteverwaltung deines NAS laufen. Trag dort fuer den Ordner "
-                "einen Benutzer mit Schreibrecht ein und setz PUID und PGID auf "
-                "dessen IDs. Als Notloesung geht auch PUID=0 und PGID=0, dann "
-                "laeuft der Container aber als root und alles was er schreibt "
-                "gehoert root."
+                "einen Benutzer mit Schreibrecht ein."
+            )
+            if daten_rechte["media_uid"] not in (None, 0):
+                hinweis += (
+                    f" Dein Datenverzeichnis gehoert "
+                    f"{daten_rechte['media_uid']}:{daten_rechte['media_gid']}, das "
+                    f"sind vermutlich deine eigenen IDs. Probier PUID="
+                    f"{daten_rechte['media_uid']} und PGID={daten_rechte['media_gid']}."
+                )
+            hinweis += (
+                " Als Notloesung geht auch PUID=0 und PGID=0, dann laeuft der "
+                "Container aber als root und alles was er schreibt gehoert root."
             )
         else:
             hinweis += (
