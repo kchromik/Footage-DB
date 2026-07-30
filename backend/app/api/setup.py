@@ -140,11 +140,26 @@ def system_check(_: str = Depends(allow_setup)) -> dict:
         was = "lesbar" if not media_readable else "beschreibbar"
         hinweis = (
             f"Der Medienordner ist nicht {was}. Er gehoert Benutzer "
-            f"{rechte['media_uid']} und Gruppe {rechte['media_gid']}, der Container "
-            f"laeuft als {rechte['container_uid']}:{rechte['container_gid']}. "
-            f"Setz PUID={rechte['media_uid']} und PGID={rechte['media_gid']} und "
-            "starte den Container neu."
+            f"{rechte['media_uid']} und Gruppe {rechte['media_gid']} (Modus "
+            f"{rechte['mode']}), der Container laeuft als "
+            f"{rechte['container_uid']}:{rechte['container_gid']}. "
         )
+        if rechte["media_uid"] == 0 and rechte["mode"] in {"0000", "0700", "0750"}:
+            # Typisch fuer Freigaben auf NAS-Systemen: die Rechte haengen an
+            # ACLs, die klassischen Unix-Bits sind auf null gesetzt
+            hinweis += (
+                "Das sieht nach einer Freigabe aus, deren Rechte ueber die "
+                "Rechteverwaltung deines NAS laufen. Trag dort fuer den Ordner "
+                "einen Benutzer mit Schreibrecht ein und setz PUID und PGID auf "
+                "dessen IDs. Als Notloesung geht auch PUID=0 und PGID=0, dann "
+                "laeuft der Container aber als root und alles was er schreibt "
+                "gehoert root."
+            )
+        else:
+            hinweis += (
+                f"Setz PUID={rechte['media_uid']} und PGID={rechte['media_gid']} "
+                "und starte den Container neu."
+            )
         if not media_writable and media_readable:
             hinweis += " Suchen und Herunterladen geht solange trotzdem."
         warnings.append(hinweis)

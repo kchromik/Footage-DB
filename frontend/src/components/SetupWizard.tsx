@@ -234,8 +234,29 @@ export function SetupWizard({ status, onDone }: Props) {
           {current === 'system' && (
             <>
               <header className="wizard-head">
-                <h1>Systempruefung</h1>
-                <p>Ein kurzer Blick, ob alles vorhanden und erreichbar ist.</p>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                  }}
+                >
+                  <div>
+                    <h1>Systempruefung</h1>
+                    <p>Ein kurzer Blick, ob alles vorhanden und erreichbar ist.</p>
+                  </div>
+                  <button
+                    className="btn small"
+                    disabled={busy}
+                    onClick={() => {
+                      setCheck(null)
+                      setError('')
+                    }}
+                  >
+                    Erneut pruefen
+                  </button>
+                </div>
               </header>
               <div className="wizard-content">
                 {busy && !check ? (
