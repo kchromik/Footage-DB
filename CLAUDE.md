@@ -56,6 +56,10 @@ Ein Prozess, ein Container: FastAPI liefert die gebaute React-Oberfläche als st
 
 **Frontend**: Kein Router, kein State-Management-Framework. `App.tsx` hält den View-State, `lib/api.ts` ist ein schlanker fetch-Wrapper, Komponenten liegen flach in `components/`.
 
+## Release
+
+Mit jedem Push auf `main` muss auch ein neues Versions-Tag angelegt und gepusht werden (`git tag vX.Y.Z && git push origin vX.Y.Z`, im Zweifel Patch-Version erhöhen). Erst das Tag lässt die CI ein versioniertes Image `ghcr.io/kchromik/footage-db:X.Y.Z` bauen, das für Updates auf dem NAS gebraucht wird.
+
 ## Konventionen
 
 - Docstrings, Kommentare, Log-Meldungen und Commit-Messages sind auf Deutsch. Commits folgen Conventional Commits (`feat:`, `fix:`) mit deutscher Beschreibung.
