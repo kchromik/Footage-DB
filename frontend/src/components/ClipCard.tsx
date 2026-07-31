@@ -20,7 +20,7 @@ function ClipCardInner({ clip, selected, selecting, onOpen, onToggle, index }: P
   const frameRef = useRef<HTMLDivElement>(null)
   const sprite = clip.sprite
 
-  /* Beim Ziehen der Maus ueber die Kachel durch die Einzelbilder blaettern.
+  /* Beim Ziehen der Maus über die Kachel durch die Einzelbilder blättern.
      Genau das macht das Sichten von Material schnell. */
   const handleMove = useCallback(
     (event: React.MouseEvent) => {
@@ -100,7 +100,7 @@ function ClipCardInner({ clip, selected, selecting, onOpen, onToggle, index }: P
         <button
           type="button"
           className={`card-select${selected ? ' on' : ''}`}
-          aria-label={selected ? 'Auswahl aufheben' : 'Auswaehlen'}
+          aria-label={selected ? 'Auswahl aufheben' : 'Auswählen'}
           onClick={(event) => {
             event.stopPropagation()
             onToggle(clip, event.shiftKey)

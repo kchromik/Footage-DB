@@ -6,8 +6,8 @@ export interface LiveEvent {
 }
 
 /**
- * Haelt eine Verbindung zum Ereignisstrom des Servers offen und verbindet
- * sich nach einem Abbruch selbstaendig neu.
+ * Hält eine Verbindung zum Ereignisstrom des Servers offen und verbindet
+ * sich nach einem Abbruch selbständig neu.
  */
 export function useEvents(onEvent: (event: LiveEvent) => void, enabled: boolean) {
   const handler = useRef(onEvent)
@@ -26,7 +26,7 @@ export function useEvents(onEvent: (event: LiveEvent) => void, enabled: boolean)
         try {
           handler.current(JSON.parse(message.data) as LiveEvent)
         } catch {
-          /* unvollstaendige Nachricht ignorieren */
+          /* unvollständige Nachricht ignorieren */
         }
       }
       source.onerror = () => {

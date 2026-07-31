@@ -2,8 +2,8 @@
 
 Das Passwort kann aus zwei Quellen kommen: aus der `.env` oder aus dem
 Einrichtungsassistenten (dann liegt es als scrypt-Hash in der Datenbank).
-Der Hash aus der Datenbank hat Vorrang. Ist beides leer, laeuft die Oberflaeche
-ohne Anmeldung, das ist nur fuer ein abgeschottetes Heimnetz gedacht.
+Der Hash aus der Datenbank hat Vorrang. Ist beides leer, läuft die Oberfläche
+ohne Anmeldung, das ist nur für ein abgeschottetes Heimnetz gedacht.
 """
 
 from __future__ import annotations
@@ -26,8 +26,8 @@ _secret = settings.secret_key.strip()
 if not _secret:
     _secret = secrets.token_hex(32)
     log.warning(
-        "FDB_SECRET_KEY ist nicht gesetzt. Es wird ein Zufallsschluessel verwendet, "
-        "dadurch werden alle Anmeldungen bei jedem Neustart ungueltig."
+        "FDB_SECRET_KEY ist nicht gesetzt. Es wird ein Zufallsschlüssel verwendet, "
+        "dadurch werden alle Anmeldungen bei jedem Neustart ungültig."
     )
 
 _serializer = URLSafeTimedSerializer(_secret, salt="fdb-session")

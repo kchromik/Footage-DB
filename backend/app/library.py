@@ -37,7 +37,7 @@ def ensure_tag(conn: sqlite3.Connection, name: str, category: str = "custom") ->
 def set_auto_tags(
     conn: sqlite3.Connection, clip_id: int, tags: list[tuple[str, str]]
 ) -> None:
-    """Ersetzt alle automatischen Tags eines Clips. Manuelle bleiben unberuehrt."""
+    """Ersetzt alle automatischen Tags eines Clips. Manuelle bleiben unberührt."""
     conn.execute(
         "DELETE FROM clip_tags WHERE clip_id = ? AND source = ?",
         (clip_id, AUTO_TAG_SOURCE),
@@ -151,7 +151,7 @@ def _safe_hash(rel_path: str, size: int) -> str | None:
     try:
         return content_hash(settings.media_root / rel_path, size)
     except OSError as exc:
-        log.warning("Konnte Pruefsumme nicht bilden fuer %s: %s", rel_path, exc)
+        log.warning("Konnte Prüfsumme nicht bilden für %s: %s", rel_path, exc)
         return None
 
 
@@ -230,7 +230,7 @@ def delete_clip(clip_id: int, remove_file: bool = False) -> None:
         try:
             (settings.media_root / row["path"]).unlink(missing_ok=True)
         except OSError as exc:
-            log.warning("Datei konnte nicht geloescht werden: %s", exc)
+            log.warning("Datei konnte nicht gelöscht werden: %s", exc)
     for artifact in paths.artifact_paths(clip_id):
         try:
             artifact.unlink(missing_ok=True)

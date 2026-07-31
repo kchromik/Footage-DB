@@ -13,6 +13,6 @@ watchdog>=6.0,<7.0
 httpx>=0.28,<1.0
 zipstream-ng>=1.8,<2.0
 
-# Semantische Suche (CLIP ueber ONNX Runtime, laeuft auf der CPU)
+# Semantische Suche (CLIP über ONNX Runtime, läuft auf der CPU)
 onnxruntime>=1.20
 tokenizers>=0.20,<1.0

@@ -1,8 +1,8 @@
-"""Baut die SQL-Abfrage fuer die Clip-Suche inklusive Facetten.
+"""Baut die SQL-Abfrage für die Clip-Suche inklusive Facetten.
 
-Alle Facetten laufen einheitlich ueber Tags: Kamera, Aufloesung, Bildrate,
-Look und Herkunft sind automatisch vergebene Tags. Das haelt Filterlogik und
-Oberflaeche einfach, weil es nur einen Mechanismus gibt.
+Alle Facetten laufen einheitlich über Tags: Kamera, Auflösung, Bildrate,
+Look und Herkunft sind automatisch vergebene Tags. Das hält Filterlogik und
+Oberfläche einfach, weil es nur einen Mechanismus gibt.
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ class ClipFilters:
 
 
 def fts_expression(text: str) -> str | None:
-    """Baut aus freiem Text eine FTS5-Abfrage mit Praefixsuche."""
+    """Baut aus freiem Text eine FTS5-Abfrage mit Präfixsuche."""
     tokens = [t for t in re.findall(r"[0-9A-Za-zÄÖÜäöüß_]+", text or "") if len(t) > 1]
     if not tokens:
         return None
@@ -142,7 +142,7 @@ def text_match_ids(text: str, limit: int = 5000) -> list[int]:
 
 
 def facets(where: str, params: list[Any], limit_per_category: int = 40) -> dict:
-    """Zaehlt Tags, Looks und Ordner innerhalb der aktuellen Auswahl."""
+    """Zählt Tags, Looks und Ordner innerhalb der aktuellen Auswahl."""
     conn = get_conn()
     tag_rows = conn.execute(
         f"""

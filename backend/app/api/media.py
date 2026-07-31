@@ -136,7 +136,7 @@ def play(clip_id: int, request: Request) -> Response:
     raise HTTPException(
         status_code=409,
         detail="Vorschau wird noch erzeugt" if clip["proxy_status"] == "pending"
-        else "Fuer diesen Clip konnte keine Vorschau erzeugt werden",
+        else "Für diesen Clip konnte keine Vorschau erzeugt werden",
     )
 
 
@@ -164,9 +164,9 @@ def download_zip(ids: str = Query(..., description="Kommagetrennte Clip-IDs")) -
     try:
         clip_ids = [int(part) for part in ids.split(",") if part.strip()][:MAX_ZIP_CLIPS]
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail="Ungueltige ID-Liste") from exc
+        raise HTTPException(status_code=400, detail="Ungültige ID-Liste") from exc
     if not clip_ids:
-        raise HTTPException(status_code=400, detail="Keine Clips ausgewaehlt")
+        raise HTTPException(status_code=400, detail="Keine Clips ausgewählt")
 
     placeholders = ",".join("?" * len(clip_ids))
     rows = get_conn().execute(
@@ -188,7 +188,7 @@ def download_zip(ids: str = Query(..., description="Kommagetrennte Clip-IDs")) -
         added += 1
 
     if added == 0:
-        raise HTTPException(status_code=404, detail="Keine der Dateien ist verfuegbar")
+        raise HTTPException(status_code=404, detail="Keine der Dateien ist verfügbar")
 
     return StreamingResponse(
         stream,

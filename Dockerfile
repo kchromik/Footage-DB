@@ -23,10 +23,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         ca-certificates \
         passwd \
-        # VAAPI-Treiber fuer Intel QuickSync. ffmpeg allein bringt nur die
-        # Schnittstelle mit, ohne diese Treiber schlaegt jede Initialisierung
+        # VAAPI-Treiber für Intel QuickSync. ffmpeg allein bringt nur die
+        # Schnittstelle mit, ohne diese Treiber schlägt jede Initialisierung
         # mit "unknown libva error" fehl. iHD deckt Gen8 und neuer ab, i965
-        # die aelteren Generationen. Kostet rund 20 MB.
+        # die älteren Generationen. Kostet rund 20 MB.
         intel-media-va-driver \
         i965-va-driver \
         vainfo \

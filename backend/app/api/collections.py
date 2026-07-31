@@ -1,4 +1,4 @@
-"""Sammlungen: Clips fuer ein bestimmtes Videoprojekt zusammenstellen."""
+"""Sammlungen: Clips für ein bestimmtes Videoprojekt zusammenstellen."""
 
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
 """Hintergrund-Jobs.
 
 Die Warteschlange liegt in SQLite, die Worker sind einfache Threads. Das
-reicht voellig fuer eine Ein-Container-App und spart Redis und Celery.
+reicht völlig für eine Ein-Container-App und spart Redis und Celery.
 Die eigentliche Arbeit passiert ohnehin in ffmpeg-Unterprozessen.
 """
 
@@ -19,7 +19,7 @@ from .events import bus
 
 log = logging.getLogger(__name__)
 
-# type -> (handler, standard-prioritaet)
+# type -> (handler, standard-priorität)
 _HANDLERS: dict[str, tuple[Callable[[sqlite3.Row], Any], int]] = {}
 
 PRIORITIES = {"probe": 10, "poster": 20, "sprite": 30, "proxy": 40, "embed": 50}
@@ -83,7 +83,7 @@ _wake = threading.Event()
 
 
 def _claim_job() -> sqlite3.Row | None:
-    """Holt den naechsten Job und markiert ihn als laufend."""
+    """Holt den nächsten Job und markiert ihn als laufend."""
     try:
         with transaction() as conn:
             row = conn.execute(

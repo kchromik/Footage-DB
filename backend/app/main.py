@@ -1,4 +1,4 @@
-"""FastAPI-Anwendung: API, Hintergrundarbeit und Auslieferung der Oberflaeche."""
+"""FastAPI-Anwendung: API, Hintergrundarbeit und Auslieferung der Oberfläche."""
 
 from __future__ import annotations
 
@@ -91,7 +91,7 @@ async def lifespan(app: FastAPI):
     log.info("Medienordner: %s", settings.media_root)
     if not settings.media_root.exists():
         log.error(
-            "Der Medienordner %s existiert nicht. Bitte das Volume pruefen.",
+            "Der Medienordner %s existiert nicht. Bitte das Volume prüfen.",
             settings.media_root,
         )
 
@@ -99,7 +99,7 @@ async def lifespan(app: FastAPI):
 
     cleaned = cleanup_stale_uploads()
     if cleaned:
-        log.info("%d abgebrochene Uploads aufgeraeumt", cleaned)
+        log.info("%d abgebrochene Uploads aufgeräumt", cleaned)
 
     jobs.start_pool(runtime.worker_count)
     threading.Thread(target=_preload_semantic, name="semantic-preload", daemon=True).start()
@@ -124,7 +124,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="FootageDB",
-    description="B-Roll-Bibliothek fuer das eigene NAS",
+    description="B-Roll-Bibliothek für das eigene NAS",
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/api/docs",
@@ -145,13 +145,13 @@ app.include_router(collections.router)
 
 @app.exception_handler(404)
 async def not_found(request: Request, exc) -> JSONResponse | FileResponse:
-    """API-Pfade liefern JSON, alles andere die Oberflaeche (Client-Routing)."""
+    """API-Pfade liefern JSON, alles andere die Oberfläche (Client-Routing)."""
     if request.url.path.startswith("/api/"):
         return JSONResponse({"detail": "Nicht gefunden"}, status_code=404)
     index = _static_dir() / "index.html" if _static_dir() else None
     if index and index.exists():
         return FileResponse(index)
-    return JSONResponse({"detail": "Oberflaeche nicht gebaut"}, status_code=404)
+    return JSONResponse({"detail": "Oberfläche nicht gebaut"}, status_code=404)
 
 
 def _static_dir() -> Path | None:
@@ -164,4 +164,4 @@ def _static_dir() -> Path | None:
 _static = _static_dir()
 if _static and _static.exists():
     app.mount("/", StaticFiles(directory=str(_static), html=True), name="static")
-    log.info("Oberflaeche wird aus %s ausgeliefert", _static)
+    log.info("Oberfläche wird aus %s ausgeliefert", _static)

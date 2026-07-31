@@ -1,4 +1,4 @@
-"""Tests fuer das Einsortieren: Zielpfade, Kollisionen, Ausfuehrung, Undo."""
+"""Tests für das Einsortieren: Zielpfade, Kollisionen, Ausführung, Undo."""
 
 from __future__ import annotations
 

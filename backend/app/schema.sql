@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS clip_tags (
 );
 CREATE INDEX IF NOT EXISTS idx_clip_tags_tag ON clip_tags(tag_id);
 
--- Volltextsuche ueber Dateiname, Ordner, Kamera, Tags und Notizen
+-- Volltextsuche über Dateiname, Ordner, Kamera, Tags und Notizen
 CREATE VIRTUAL TABLE IF NOT EXISTS clips_fts USING fts5(
     body,
     clip_id UNINDEXED,
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     finished_at  TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_jobs_state ON jobs(state, priority, id);
--- verhindert doppelte offene Jobs fuer denselben Clip
+-- verhindert doppelte offene Jobs für denselben Clip
 CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_open_unique
     ON jobs(type, clip_id) WHERE state IN ('queued', 'running');
 

@@ -1,8 +1,8 @@
-"""Einstellungen, die zur Laufzeit aenderbar sind.
+"""Einstellungen, die zur Laufzeit änderbar sind.
 
-Die `.env` liefert die Startwerte. Was ueber den Einrichtungsassistenten oder
-die Einstellungsseite geaendert wird, landet in der Tabelle `settings` und
-gewinnt danach gegen die Umgebungsvariable. So muss fuer eine Anpassung nicht
+Die `.env` liefert die Startwerte. Was über den Einrichtungsassistenten oder
+die Einstellungsseite geändert wird, landet in der Tabelle `settings` und
+gewinnt danach gegen die Umgebungsvariable. So muss für eine Anpassung nicht
 der Container neu gebaut werden.
 """
 
@@ -44,7 +44,7 @@ def _env_default(key: str) -> Any:
 
 
 class RuntimeSettings:
-    """Zwischenspeicher ueber der settings-Tabelle."""
+    """Zwischenspeicher über der settings-Tabelle."""
 
     def __init__(self) -> None:
         self._cache: dict[str, Any] = {}
@@ -152,11 +152,11 @@ class RuntimeSettings:
 
     @property
     def has_password(self) -> bool:
-        """Ist ueberhaupt irgendwo ein Passwort hinterlegt?"""
+        """Ist überhaupt irgendwo ein Passwort hinterlegt?"""
         return bool(self.password_hash) or bool(settings.auth_password.strip())
 
 
-# --- Passwoerter --------------------------------------------------------
+# --- Passwörter --------------------------------------------------------
 
 SCRYPT_N = 2**14
 SCRYPT_R = 8

@@ -1,7 +1,7 @@
 """SQLite-Zugriff.
 
 Jeder Thread bekommt seine eigene Verbindung. WAL erlaubt gleichzeitige Leser
-waehrend ein Worker schreibt, deshalb kommen wir ohne eigene Sperren aus.
+während ein Worker schreibt, deshalb kommen wir ohne eigene Sperren aus.
 """
 
 from __future__ import annotations
@@ -71,13 +71,13 @@ def init_db() -> None:
     conn = get_conn()
     conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
     _apply_migrations(conn)
-    # Haengengebliebene Jobs aus einem harten Neustart wieder freigeben
+    # Hängengebliebene Jobs aus einem harten Neustart wieder freigeben
     conn.execute("UPDATE jobs SET state='queued', started_at=NULL WHERE state='running'")
     log.info("Datenbank bereit: %s", settings.db_path)
 
 
 def _apply_migrations(conn: sqlite3.Connection) -> None:
-    """Spaltenweise Nachruestung, damit Updates ohne Datenverlust laufen."""
+    """Spaltenweise Nachrüstung, damit Updates ohne Datenverlust laufen."""
     additions: dict[str, dict[str, str]] = {
         "clips": {
             "projection": "TEXT",
@@ -94,7 +94,15 @@ def _apply_migrations(conn: sqlite3.Connection) -> None:
         for column, ddl in columns.items():
             if column not in existing:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
-                log.info("Spalte %s.%s ergaenzt", table, column)
+                log.info("Spalte %s.%s ergänzt", table, column)
+
+    # Ältere Versionen schrieben Umlaute als Ersatzschreibweise in die
+    # Look-Begründung. Einmalig geradeziehen, damit Bestandsclips in der
+    # Detailansicht nicht bei "enthaelt" bleiben.
+    conn.execute(
+        "UPDATE clips SET look_reason = REPLACE(look_reason, 'enthaelt', 'enthält') "
+        "WHERE look_reason LIKE '%enthaelt%'"
+    )
 
 
 # --- kleine Helfer ------------------------------------------------------
@@ -174,7 +182,7 @@ def reindex_fts(conn: sqlite3.Connection, clip_id: int) -> None:
             parts.append(str(value))
     parts.extend(tags)
 
-    # Dateinamen zusaetzlich an Trennzeichen zerlegen, damit "A7401" auch
+    # Dateinamen zusätzlich an Trennzeichen zerlegen, damit "A7401" auch
     # in "2026-07-14_FX3_A7401.MP4" gefunden wird
     import re
 

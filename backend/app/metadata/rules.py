@@ -1,7 +1,7 @@
 """Ableitungen aus den Rohmetadaten: Kameraname, Grading-Status, Auto-Tags.
 
 Alle Heuristiken stehen bewusst in dieser einen Datei, damit sie leicht
-nachgeschaerft werden koennen. Ein manuell gesetzter Look gewinnt immer
+nachgeschärft werden können. Ein manuell gesetzter Look gewinnt immer
 gegen die Automatik (siehe api/clips.py).
 """
 
@@ -16,7 +16,7 @@ from .probe import ProbeResult
 
 # --- Kameranamen --------------------------------------------------------
 
-# Kryptische Modellbezeichnungen in lesbare Namen uebersetzen
+# Kryptische Modellbezeichnungen in lesbare Namen übersetzen
 MODEL_ALIASES: dict[str, str] = {
     # Sony
     "ILCE-7SM3": "Sony a7S III",
@@ -62,7 +62,7 @@ MAKE_ALIASES = {
     "arashi vision": "Insta360",
 }
 
-# Wenn gar keine Kamerametadaten vorhanden sind: Rueckschluss aus dem Dateinamen
+# Wenn gar keine Kamerametadaten vorhanden sind: Rückschluss aus dem Dateinamen
 FILENAME_CAMERA_HINTS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"^DJI_\d+", re.I), "DJI"),
     (re.compile(r"^(GX|GH|GP|GOPR)\d{6}", re.I), "GoPro"),
@@ -105,7 +105,7 @@ PATH_GRADED_HINT = re.compile(
     re.I,
 )
 # Bewusst eng gehalten: nur Begriffe, die wirklich ein Log-Profil meinen.
-# Woerter wie "rushes" oder "original" sagen nur, dass es Rohmaterial ist,
+# Wörter wie "rushes" oder "original" sagen nur, dass es Rohmaterial ist,
 # nicht in welchem Gamma es aufgenommen wurde.
 PATH_LOG_HINT = re.compile(
     r"(^|[^a-z])(s-?log-?[23]?|c-?log-?[23]?|v-?log|d-?log|n-?log|f-?log-?2?|"
@@ -118,7 +118,7 @@ HDR_TRANSFERS = {
     "arib-std-b67": "HLG",
 }
 
-# Wie die Projektion in der Oberflaeche heissen soll
+# Wie die Projektion in der Oberfläche heißen soll
 PROJECTION_LABELS = {
     "equirectangular": "Equirect",
     "half equirectangular": "Halbpanorama",
@@ -187,7 +187,7 @@ def detect_look(probe: ProbeResult, rel_path: str) -> tuple[str, str | None, str
     """Liefert (look, grund, profilname)."""
     exif = probe.raw_tags.get("exif", {}) if probe.raw_tags else {}
 
-    # 1. Ausdrueckliches Kameraprofil in den Metadaten
+    # 1. Ausdrückliches Kameraprofil in den Metadaten
     profile_sources = [
         exif.get("PhotoStyle"),
         exif.get("PictureProfile"),
@@ -206,17 +206,17 @@ def detect_look(probe: ProbeResult, rel_path: str) -> tuple[str, str | None, str
     if exif.get("CanonLogVersion"):
         return "log", "Canon Log laut Metadaten", "C-Log"
 
-    # 2. Hinweise aus Ordner- und Dateinamen (deine eigene Ablage schlaegt Raten)
+    # 2. Hinweise aus Ordner- und Dateinamen (deine eigene Ablage schlägt Raten)
     folder_part = rel_path.rsplit("/", 1)[0] if "/" in rel_path else ""
     if PATH_GRADED_HINT.search(rel_path):
         hint = PATH_GRADED_HINT.search(rel_path).group(2)
-        return "graded", f"Pfad enthaelt '{hint}'", None
+        return "graded", f"Pfad enthält '{hint}'", None
     if PATH_LOG_HINT.search(folder_part):
         hint = PATH_LOG_HINT.search(folder_part).group(2)
         profile = _profile_from_text(folder_part)
-        return "log", f"Ordner enthaelt '{hint}'", profile
+        return "log", f"Ordner enthält '{hint}'", profile
 
-    # 3. HDR-Uebertragungsfunktion ist eine harte Tatsache aus der Datei
+    # 3. HDR-Übertragungsfunktion ist eine harte Tatsache aus der Datei
     if probe.color_transfer in HDR_TRANSFERS:
         return "hdr", f"Transferfunktion {HDR_TRANSFERS[probe.color_transfer]}", None
 
@@ -227,7 +227,7 @@ def detect_look(probe: ProbeResult, rel_path: str) -> tuple[str, str | None, str
     if software and EXPORT_SIGNATURES.search(str(software)):
         return "graded", f"Software '{software}'", None
 
-    # 5. 10 Bit direkt aus der Kamera spricht stark fuer LOG
+    # 5. 10 Bit direkt aus der Kamera spricht stark für LOG
     if probe.bit_depth and probe.bit_depth >= 10:
         return "log", "10 Bit ohne Export-Signatur (vermutet)", None
 
@@ -239,7 +239,7 @@ def detect_look(probe: ProbeResult, rel_path: str) -> tuple[str, str | None, str
 
 
 def derive(probe: ProbeResult, rel_path: str, filename: str) -> Derived:
-    """Erzeugt Kameraname, Look und alle automatischen Tags fuer einen Clip."""
+    """Erzeugt Kameraname, Look und alle automatischen Tags für einen Clip."""
     result = Derived()
 
     camera = normalize_camera(probe.camera_make, probe.camera_model)
@@ -253,8 +253,8 @@ def derive(probe: ProbeResult, rel_path: str, filename: str) -> Derived:
     result.look = look
     result.look_reason = reason
     # Der Look selbst steckt in einer eigenen Spalte und ist per Hand
-    # ueberschreibbar. Als Tag kommt nur das konkrete Kameraprofil dazu,
-    # sonst wuerden Spalte und Tag bei einer Korrektur auseinanderlaufen.
+    # überschreibbar. Als Tag kommt nur das konkrete Kameraprofil dazu,
+    # sonst würden Spalte und Tag bei einer Korrektur auseinanderlaufen.
     if look == "log" and profile:
         result.add_tag(profile, "look")
 

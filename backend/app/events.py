@@ -1,6 +1,6 @@
-"""Ereignis-Bus fuer Live-Updates in der Oberflaeche (Server-Sent Events).
+"""Ereignis-Bus für Live-Updates in der Oberfläche (Server-Sent Events).
 
-Worker laufen in eigenen Threads, die Oberflaeche haengt am Event-Loop.
+Worker laufen in eigenen Threads, die Oberfläche hängt am Event-Loop.
 publish() ist deshalb bewusst thread-sicher.
 """
 
@@ -38,7 +38,7 @@ class EventBus:
             try:
                 queue.put_nowait(payload)
             except asyncio.QueueFull:
-                # Langsamer Client: aeltestes Ereignis verwerfen
+                # Langsamer Client: ältestes Ereignis verwerfen
                 try:
                     queue.get_nowait()
                     queue.put_nowait(payload)

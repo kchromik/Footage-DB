@@ -1,7 +1,7 @@
-"""CLIP ViT-B/32 ueber ONNX Runtime, laeuft komplett lokal auf der CPU.
+"""CLIP ViT-B/32 über ONNX Runtime, läuft komplett lokal auf der CPU.
 
 Die Modelldateien werden beim ersten Bedarf nach /data/models geladen.
-Schlaegt das fehl, bleibt die App voll funktionsfaehig, nur die inhaltliche
+Schlägt das fehl, bleibt die App voll funktionsfähig, nur die inhaltliche
 Suche ist dann aus.
 """
 
@@ -59,7 +59,7 @@ class ModelUnavailable(RuntimeError):
 
 
 class ClipModel:
-    """Laedt die Modelle traege und teilt sie zwischen allen Workern."""
+    """Lädt die Modelle träge und teilt sie zwischen allen Workern."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -101,7 +101,7 @@ class ClipModel:
                 self._failed = False
             except Exception as exc:  # noqa: BLE001
                 self._failed = True
-                self._status = f"nicht verfuegbar: {exc}"
+                self._status = f"nicht verfügbar: {exc}"
                 log.warning("CLIP-Modell konnte nicht geladen werden: %s", exc)
                 raise ModelUnavailable(str(exc)) from exc
 
@@ -118,7 +118,7 @@ class ClipModel:
                 continue
             if not download:
                 raise ModelUnavailable(f"{spec.name} fehlt")
-            self._status = f"laedt {spec.name}"
+            self._status = f"lädt {spec.name}"
             _download(spec, target)
 
         options = ort.SessionOptions()
@@ -232,7 +232,7 @@ def _download(spec: ModelFile, target: Path) -> None:
                 handle.write(chunk)
     if tmp.stat().st_size < spec.min_size * 0.9:
         tmp.unlink(missing_ok=True)
-        raise ModelUnavailable(f"{spec.name} unvollstaendig geladen")
+        raise ModelUnavailable(f"{spec.name} unvollständig geladen")
     tmp.replace(target)
     log.info("Modelldatei %s bereit (%.0f MB)", spec.name, target.stat().st_size / 1e6)
 

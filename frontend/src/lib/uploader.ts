@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { api } from './api'
 
-export type UploadState = 'wartet' | 'laeuft' | 'fertig' | 'fehler' | 'abgebrochen'
+export type UploadState = 'wartet' | 'läuft' | 'fertig' | 'fehler' | 'abgebrochen'
 
 export interface UploadTask {
   key: string
@@ -19,8 +19,8 @@ export interface UploadTask {
 const PARALLEL_CHUNKS = 2
 
 /**
- * Laedt Dateien blockweise hoch. Bricht die Verbindung ab, merkt sich der
- * Server die bereits erhaltenen Bloecke und der naechste Versuch macht dort
+ * Lädt Dateien blockweise hoch. Bricht die Verbindung ab, merkt sich der
+ * Server die bereits erhaltenen Blöcke und der nächste Versuch macht dort
  * weiter, statt eine 30-GB-Datei erneut zu schicken.
  */
 export function useUploader(onFinished: (clipId: number) => void) {
@@ -37,7 +37,7 @@ export function useUploader(onFinished: (clipId: number) => void) {
 
   const runOne = useCallback(
     async (task: UploadTask) => {
-      update(task.key, { state: 'laeuft' })
+      update(task.key, { state: 'läuft' })
       try {
         const init = await api.initUpload(
           task.file.name,
@@ -162,7 +162,7 @@ export function useUploader(onFinished: (clipId: number) => void) {
     setTasks((current) => current.filter((task) => task.state !== 'fertig'))
   }, [])
 
-  const active = tasks.some((task) => task.state === 'laeuft' || task.state === 'wartet')
+  const active = tasks.some((task) => task.state === 'läuft' || task.state === 'wartet')
 
   return { tasks, add, cancel, retry, clearFinished, active }
 }

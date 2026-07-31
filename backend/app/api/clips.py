@@ -107,7 +107,7 @@ def list_clips(
             ranked = [(cid, 1.0 - i / 10000) for i, cid in enumerate(text_ids)]
             used_mode = "text"
         else:
-            # Exakte Treffer zuerst, danach die inhaltlich aehnlichen
+            # Exakte Treffer zuerst, danach die inhaltlich ähnlichen
             seen = set(text_ids)
             ranked = [(cid, 2.0 - i / 10000) for i, cid in enumerate(text_ids)]
             ranked += [(cid, score) for cid, score in semantic_hits if cid not in seen]
@@ -267,7 +267,7 @@ class BatchTagRequest(BaseModel):
 @router.post("/batch/tags")
 def batch_tags(payload: BatchTagRequest) -> dict:
     if not payload.clip_ids:
-        raise HTTPException(status_code=400, detail="Keine Clips ausgewaehlt")
+        raise HTTPException(status_code=400, detail="Keine Clips ausgewählt")
     conn = get_conn()
     changed = 0
     for clip_id in payload.clip_ids:

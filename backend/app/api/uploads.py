@@ -1,8 +1,8 @@
-"""Upload grosser Dateien in Haeppchen, mit Wiederaufnahme nach Abbruch.
+"""Upload großer Dateien in Häppchen, mit Wiederaufnahme nach Abbruch.
 
-Der Browser meldet Dateiname und Groesse an, laedt danach Bloecke fester
-Groesse hoch und schliesst am Ende ab. Jeder Block landet per pwrite an
-seiner Position in einer Datei, dadurch entfaellt das Zusammensetzen.
+Der Browser meldet Dateiname und Größe an, lädt danach Blöcke fester
+Größe hoch und schließt am Ende ab. Jeder Block landet per pwrite an
+seiner Position in einer Datei, dadurch entfällt das Zusammensetzen.
 """
 
 from __future__ import annotations
@@ -32,24 +32,24 @@ from .deps import require_user
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/uploads", tags=["uploads"], dependencies=[Depends(require_user)])
 
-MAX_SIZE = 500 * 1024 * 1024 * 1024  # 500 GB, faengt nur Unsinn ab
+MAX_SIZE = 500 * 1024 * 1024 * 1024  # 500 GB, fängt nur Unsinn ab
 
-# Zwischenablage fuer laufende Uploads, versteckt im Medienordner
+# Zwischenablage für laufende Uploads, versteckt im Medienordner
 STAGING_DIRNAME = ".footagedb-incoming"
 
 
 @functools.lru_cache(maxsize=1)
 def staging_dir() -> Path:
-    """Wo die Bloecke waehrend des Uploads landen.
+    """Wo die Blöcke während des Uploads landen.
 
     Am Ende wird die fertige Datei nur umbenannt. Das geht nur innerhalb
-    desselben Dateisystems, deshalb liegt die Zwischendatei moeglichst schon
+    desselben Dateisystems, deshalb liegt die Zwischendatei möglichst schon
     im Medienordner. Auf einem NAS sind /data und /media meist getrennte
     Mounts, und eine 30-GB-Datei erst auf den Cache und dann noch einmal auf
-    den Share zu schreiben waere doppelte Arbeit und doppelter Platzbedarf.
+    den Share zu schreiben wäre doppelte Arbeit und doppelter Platzbedarf.
 
-    Laesst sich dort nicht schreiben, faellt es auf das Datenverzeichnis
-    zurueck. Dann kopiert shutil.move eben ueber die Dateisystemgrenze.
+    Lässt sich dort nicht schreiben, fällt es auf das Datenverzeichnis
+    zurück. Dann kopiert shutil.move eben über die Dateisystemgrenze.
     """
     candidate = settings.media_root / STAGING_DIRNAME
     try:
@@ -72,8 +72,8 @@ def staging_dir() -> Path:
 def media_writable() -> bool:
     """Direkter Schreibtest auf den Medienordner, ohne Zwischenspeicher.
 
-    Wird beim Anmelden eines Uploads geprueft, damit nicht erst 30 GB
-    uebertragen werden und der letzte Schritt dann scheitert.
+    Wird beim Anmelden eines Uploads geprüft, damit nicht erst 30 GB
+    übertragen werden und der letzte Schritt dann scheitert.
     """
     probe = settings.media_root / ".footagedb-schreibtest"
     try:
@@ -86,7 +86,7 @@ def media_writable() -> bool:
 
 def _part_file(upload_id: str) -> Path:
     # Eine bereits begonnene Zwischendatei am alten Ort weiterverwenden,
-    # damit angefangene Uploads einen Neustart ueberleben
+    # damit angefangene Uploads einen Neustart überleben
     legacy = settings.uploads_dir / f"{upload_id}.part"
     preferred = staging_dir() / f"{upload_id}.part"
     if legacy != preferred and legacy.exists() and not preferred.exists():
@@ -108,7 +108,7 @@ def init_upload(payload: InitRequest) -> dict:
     if Path(filename).suffix.lower() not in settings.extensions:
         raise HTTPException(
             status_code=400,
-            detail=f"Dateityp wird nicht unterstuetzt: {Path(filename).suffix}",
+            detail=f"Dateityp wird nicht unterstützt: {Path(filename).suffix}",
         )
 
     if not media_writable():
@@ -116,8 +116,8 @@ def init_upload(payload: InitRequest) -> dict:
             status_code=503,
             detail=(
                 "In den Medienordner kann nicht geschrieben werden, deshalb sind "
-                "Uploads gerade nicht moeglich. Die Systempruefung unter Werkzeuge "
-                "zeigt, welche Benutzer-IDs noetig waeren."
+                "Uploads gerade nicht möglich. Die Systemprüfung unter Werkzeuge "
+                "zeigt, welche Benutzer-IDs nötig wären."
             ),
         )
 
@@ -205,7 +205,7 @@ async def upload_chunk(upload_id: str, index: int, request: Request) -> dict:
     if row["state"] != "open":
         raise HTTPException(status_code=409, detail="Upload ist bereits abgeschlossen")
     if index < 0 or index >= row["chunk_count"]:
-        raise HTTPException(status_code=400, detail="Blocknummer liegt ausserhalb")
+        raise HTTPException(status_code=400, detail="Blocknummer liegt außerhalb")
 
     offset = index * row["chunk_size"]
     expected = min(row["chunk_size"], row["size_bytes"] - offset)
@@ -218,7 +218,7 @@ async def upload_chunk(upload_id: str, index: int, request: Request) -> dict:
             if not piece:
                 continue
             if written + len(piece) > expected:
-                raise HTTPException(status_code=400, detail="Block ist zu gross")
+                raise HTTPException(status_code=400, detail="Block ist zu groß")
             os.pwrite(handle, piece, offset + written)
             written += len(piece)
     finally:
@@ -227,7 +227,7 @@ async def upload_chunk(upload_id: str, index: int, request: Request) -> dict:
     if written != expected:
         raise HTTPException(
             status_code=400,
-            detail=f"Block unvollstaendig: {written} statt {expected} Bytes",
+            detail=f"Block unvollständig: {written} statt {expected} Bytes",
         )
 
     conn = get_conn()
@@ -261,12 +261,12 @@ def complete_upload(upload_id: str) -> dict:
         missing = sorted(set(range(row["chunk_count"])) - set(_received_chunks(upload_id)))
         raise HTTPException(
             status_code=409,
-            detail=f"Upload unvollstaendig, es fehlen {len(missing)} Bloecke",
+            detail=f"Upload unvollständig, es fehlen {len(missing)} Blöcke",
         )
 
     part = _part_file(upload_id)
     if not part.exists() or part.stat().st_size != row["size_bytes"]:
-        raise HTTPException(status_code=409, detail="Zwischendatei passt nicht zur Groesse")
+        raise HTTPException(status_code=409, detail="Zwischendatei passt nicht zur Größe")
 
     target_rel = _target_path(part, row["filename"], row["subdir"])
     destination = settings.media_root / target_rel
@@ -276,15 +276,15 @@ def complete_upload(upload_id: str) -> dict:
     try:
         shutil.move(str(part), str(destination))
     except OSError as exc:
-        # Die uebertragenen Bloecke bleiben liegen, damit der Upload nach dem
-        # Beheben der Ursache ohne erneute Uebertragung fertig wird
+        # Die übertragenen Blöcke bleiben liegen, damit der Upload nach dem
+        # Beheben der Ursache ohne erneute Übertragung fertig wird
         log.error("Datei konnte nicht abgelegt werden: %s -> %s (%s)", part, destination, exc)
         raise HTTPException(
             status_code=507 if exc.errno == errno.ENOSPC else 503,
             detail=(
                 f"Die Datei konnte nicht in {destination.parent} abgelegt werden: "
-                f"{exc.strerror}. Die uebertragenen Daten bleiben erhalten, nach dem "
-                "Beheben der Ursache genuegt ein erneuter Versuch mit derselben Datei."
+                f"{exc.strerror}. Die übertragenen Daten bleiben erhalten, nach dem "
+                "Beheben der Ursache genügt ein erneuter Versuch mit derselben Datei."
             ),
         ) from exc
     try:
@@ -318,7 +318,7 @@ def _clean_tags(tags: list[str]) -> list[str]:
 
 
 def _apply_tags(clip_id: int, raw: str | None) -> None:
-    """Vergibt die beim Upload gewaehlten Tags als manuelle Tags."""
+    """Vergibt die beim Upload gewählten Tags als manuelle Tags."""
     if not raw:
         return
     try:
@@ -337,7 +337,7 @@ def _apply_tags(clip_id: int, raw: str | None) -> None:
 
 
 def _target_path(temp_file: Path, filename: str, subdir: str) -> str:
-    """Bestimmt den Zielpfad, wenn gewuenscht direkt einsortiert."""
+    """Bestimmt den Zielpfad, wenn gewünscht direkt einsortiert."""
     if subdir:
         try:
             safe_join(settings.media_root, subdir)
@@ -356,7 +356,7 @@ def _target_path(temp_file: Path, filename: str, subdir: str) -> str:
         derived = derive(probe, filename, filename)
         return organize.target_for_new_file(filename, probe.recorded_at, derived.camera_label)
     except Exception as exc:  # noqa: BLE001
-        log.warning("Einsortieren nicht moeglich, Datei landet im Wurzelordner: %s", exc)
+        log.warning("Einsortieren nicht möglich, Datei landet im Wurzelordner: %s", exc)
         return organize.unique_target("", safe_name(filename), set())
 
 
@@ -371,7 +371,7 @@ def abort_upload(upload_id: str) -> dict:
 
 
 def cleanup_stale_uploads(max_age_hours: int = 48) -> int:
-    """Raeumt liegengebliebene Zwischendateien auf (beim Start aufgerufen)."""
+    """Räumt liegengebliebene Zwischendateien auf (beim Start aufgerufen)."""
     conn = get_conn()
     rows = conn.execute(
         "SELECT id FROM uploads WHERE state = 'open' "

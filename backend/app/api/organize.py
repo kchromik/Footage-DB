@@ -1,4 +1,4 @@
-"""Einsortieren des Bestands: erst planen, dann ausfuehren, notfalls zurueck."""
+"""Einsortieren des Bestands: erst planen, dann ausführen, notfalls zurück."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ class PlanRequest(BaseModel):
 def create_plan(payload: PlanRequest | None = None) -> dict:
     plan = service.plan(payload.clip_ids if payload else None)
     data = plan.as_dict()
-    # Die Vorschau wird gekuerzt, ausgefuehrt wird trotzdem alles
+    # Die Vorschau wird gekürzt, ausgeführt wird trotzdem alles
     data["preview"] = data["moves"][:PREVIEW_LIMIT]
     data["truncated"] = len(data["moves"]) > PREVIEW_LIMIT
     del data["moves"]
@@ -41,7 +41,7 @@ class ApplyRequest(BaseModel):
 @router.post("/apply")
 def apply_plan(payload: ApplyRequest) -> dict:
     if not payload.confirm:
-        raise HTTPException(status_code=400, detail="Bitte zuerst bestaetigen")
+        raise HTTPException(status_code=400, detail="Bitte zuerst bestätigen")
     plan = service.plan(payload.clip_ids)
     if not plan.moves:
         return {"moved": 0, "failed": 0, "batch": None, "detail": "Nichts zu tun"}

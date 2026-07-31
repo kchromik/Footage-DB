@@ -25,7 +25,7 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements-dev.txt
 
-      - name: Abhaengigkeiten
+      - name: Abhängigkeiten
         working-directory: backend
         run: pip install -r requirements-dev.txt
 
@@ -45,7 +45,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - working-directory: frontend
         run: npm ci
-      - name: Typpruefung und Build
+      - name: Typprüfung und Build
         working-directory: frontend
         run: npm run build
 

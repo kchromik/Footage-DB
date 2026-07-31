@@ -95,7 +95,7 @@ export function ClipDetail({
     ['Aufnahme', clip.recorded_at ? formatDate(clip.recorded_at, true) : null],
     ['Kamera', clip.camera],
     ['Objektiv', clip.lens],
-    ['Aufloesung', clip.width && clip.height ? `${clip.width} x ${clip.height}` : null],
+    ['Auflösung', clip.width && clip.height ? `${clip.width} x ${clip.height}` : null],
     ['Bildrate', clip.fps ? `${formatFps(clip.fps)} fps` : null],
     ['Dauer', clip.duration_label],
     ['Codec', clip.video_codec ? clip.video_codec.toUpperCase() : null],
@@ -107,12 +107,12 @@ export function ClipDetail({
       clip.audio_codec
         ? `${clip.audio_codec.toUpperCase()}${
             clip.audio_channels
-              ? `, ${clip.audio_channels} ${clip.audio_channels === 1 ? 'Kanal' : 'Kanaele'}`
+              ? `, ${clip.audio_channels} ${clip.audio_channels === 1 ? 'Kanal' : 'Kanäle'}`
               : ''
           }`
         : 'keiner',
     ],
-    ['Groesse', clip.size_label],
+    ['Größe', clip.size_label],
     ['Container', clip.container],
     ['Encoder', clip.encoder],
     ['Ordner', clip.folder || '/'],
@@ -127,10 +127,10 @@ export function ClipDetail({
             <button className="round-btn" onClick={() => onNavigate(-1)} aria-label="Vorheriger Clip">
               <IconArrowLeft />
             </button>
-            <button className="round-btn" onClick={() => onNavigate(1)} aria-label="Naechster Clip">
+            <button className="round-btn" onClick={() => onNavigate(1)} aria-label="Nächster Clip">
               <IconArrowRight />
             </button>
-            <button className="round-btn" onClick={onClose} aria-label="Schliessen">
+            <button className="round-btn" onClick={onClose} aria-label="Schließen">
               <IconClose size={15} />
             </button>
           </div>
@@ -152,7 +152,7 @@ export function ClipDetail({
               <IconFilm size={40} />
               <div>
                 {clip.proxy_status === 'failed'
-                  ? 'Fuer diesen Clip konnte keine Vorschau erzeugt werden.'
+                  ? 'Für diesen Clip konnte keine Vorschau erzeugt werden.'
                   : 'Die Vorschau wird gerade erzeugt.'}
               </div>
               <button
@@ -262,7 +262,7 @@ export function ClipDetail({
             <textarea
               className="field"
               rows={2}
-              placeholder="Wofuer ist dieser Clip gut?"
+              placeholder="Wofür ist dieser Clip gut?"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               onBlur={() => notes !== (clip.notes ?? '') && patch({ notes })}

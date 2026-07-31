@@ -1,9 +1,9 @@
 """Erzeugt Poster, Sprite-Vorschau und Browser-Proxy.
 
 Ablauf pro Clip: Poster direkt aus dem Original (schneller Sprung an eine
-Stelle), danach der Proxy als einziger vollstaendiger Durchlauf. Sprite und
-CLIP-Frames werden anschliessend aus dem Proxy gezogen, das ist deutlich
-guenstiger als noch einmal 4K-Material zu dekodieren.
+Stelle), danach der Proxy als einziger vollständiger Durchlauf. Sprite und
+CLIP-Frames werden anschließend aus dem Proxy gezogen, das ist deutlich
+günstiger als noch einmal 4K-Material zu dekodieren.
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ class SpriteInfo:
 def _poster_timestamp(duration: float | None) -> float:
     """Stelle im Clip, die als Vorschaubild dient.
 
-    Der Anfang ist oft schwarz oder verwackelt, deshalb ein Stueck hinein.
+    Der Anfang ist oft schwarz oder verwackelt, deshalb ein Stück hinein.
     """
     if not duration or duration <= 0:
         return 0.0
@@ -48,7 +48,7 @@ def _poster_timestamp(duration: float | None) -> float:
 
 
 def _tonemap_chain(color_transfer: str | None) -> str | None:
-    """Filterkette fuer HDR-Material, damit die Vorschau nicht ausgewaschen wirkt."""
+    """Filterkette für HDR-Material, damit die Vorschau nicht ausgewaschen wirkt."""
     if color_transfer not in HDR_TRANSFERS or not has_filter("zscale"):
         return None
     return (
@@ -58,7 +58,7 @@ def _tonemap_chain(color_transfer: str | None) -> str | None:
     )
 
 
-# Wie die Projektion beim v360-Filter heisst
+# Wie die Projektion beim v360-Filter heißt
 V360_INPUT = {
     "equirectangular": "e",
     "half equirectangular": "he",
@@ -77,7 +77,7 @@ def flatten_chain(
 
     Ohne das zeigt die Kachel die gestreckte Weltkarte, auf der man nichts
     wiedererkennt. Mit rund 100 Grad Blickwinkel sieht sie aus wie eine
-    normale Aufnahme. Dual-Fisheye bleibt aussen vor, dafuer braeuchte es
+    normale Aufnahme. Dual-Fisheye bleibt aussen vor, dafür bräuchte es
     die Kalibrierung der jeweiligen Kamera.
     """
     mode = V360_INPUT.get(projection or "")
@@ -167,7 +167,7 @@ def extract_frames(
     projection: str | None = None,
     stereo_mode: str | None = None,
 ) -> list[Path]:
-    """Zieht count gleichmaessig verteilte Einzelbilder aus dem Video."""
+    """Zieht count gleichmäßig verteilte Einzelbilder aus dem Video."""
     target_dir.mkdir(parents=True, exist_ok=True)
     count = max(1, count)
 
@@ -177,7 +177,7 @@ def extract_frames(
         filters.append(tonemap)
 
     if duration and duration > 0.5:
-        # Etwas Abstand zu Anfang und Ende, dort ist selten etwas Nuetzliches
+        # Etwas Abstand zu Anfang und Ende, dort ist selten etwas Nützliches
         usable = max(duration * 0.9, duration - 0.5)
         offset = (duration - usable) / 2
         rate = count / usable
@@ -210,7 +210,7 @@ def build_sprite(
     projection: str | None = None,
     stereo_mode: str | None = None,
 ) -> SpriteInfo:
-    """Kachelblatt fuer die Vorschau beim Drueberfahren im Grid."""
+    """Kachelblatt für die Vorschau beim Drüberfahren im Grid."""
     wanted = settings.sprite_frames
     if duration and duration < 4:
         wanted = max(4, min(wanted, int(duration * 4) or 4))
@@ -228,7 +228,7 @@ def build_sprite(
             stereo_mode,
         )
         if not frames:
-            raise FFmpegError("Keine Einzelbilder fuer die Vorschau erhalten")
+            raise FFmpegError("Keine Einzelbilder für die Vorschau erhalten")
 
         with Image.open(frames[0]) as first:
             tile_w, tile_h = first.size
@@ -255,7 +255,7 @@ def build_proxy(
     has_audio: bool,
     color_transfer: str | None = None,
 ) -> None:
-    """Kleiner H.264-Proxy, damit jedes Format im Browser laeuft."""
+    """Kleiner H.264-Proxy, damit jedes Format im Browser läuft."""
     destination.parent.mkdir(parents=True, exist_ok=True)
     tonemap = _tonemap_chain(color_transfer)
 
@@ -342,7 +342,7 @@ def _proxy_args_vaapi(source: Path, destination: Path, has_audio: bool) -> list[
 def _atomic_save(image: Image.Image, destination: Path, quality: int) -> None:
     """Erst in eine Nebendatei schreiben, dann umbenennen.
 
-    So sieht die Oberflaeche nie ein halb geschriebenes Bild.
+    So sieht die Oberfläche nie ein halb geschriebenes Bild.
     """
     tmp_path = destination.with_suffix(destination.suffix + ".tmp")
     image.save(tmp_path, format="WEBP", quality=quality, method=4)

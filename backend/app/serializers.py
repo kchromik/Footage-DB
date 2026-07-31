@@ -1,4 +1,4 @@
-"""Umwandlung der Datenbankzeilen in das JSON-Format der Oberflaeche."""
+"""Umwandlung der Datenbankzeilen in das JSON-Format der Oberfläche."""
 
 from __future__ import annotations
 

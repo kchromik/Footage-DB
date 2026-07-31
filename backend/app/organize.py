@@ -1,8 +1,8 @@
 """Dateien nach Jahr/Monat/Kamera einsortieren.
 
-Jeder Umzug laeuft in zwei Schritten: erst ein Plan zum Ansehen, danach die
-Ausfuehrung. Jede Bewegung landet in der Tabelle moves und kann als ganzer
-Stapel wieder rueckgaengig gemacht werden.
+Jeder Umzug läuft in zwei Schritten: erst ein Plan zum Ansehen, danach die
+Ausführung. Jede Bewegung landet in der Tabelle moves und kann als ganzer
+Stapel wieder rückgängig gemacht werden.
 """
 
 from __future__ import annotations
@@ -97,7 +97,7 @@ def unique_target(directory: str, filename: str, taken: set[str]) -> str:
 def plan(clip_ids: list[int] | None = None, limit: int | None = None) -> Plan:
     conn = get_conn()
     # Nur fertig eingelesene Clips: solange Aufnahmedatum und Kamera fehlen,
-    # wuerde die Datei im falschen Ordner landen.
+    # würde die Datei im falschen Ordner landen.
     if clip_ids:
         placeholders = ",".join("?" * len(clip_ids))
         rows = conn.execute(
@@ -159,7 +159,7 @@ def plan(clip_ids: list[int] | None = None, limit: int | None = None) -> Plan:
 
 
 def apply(moves: list[PlannedMove]) -> dict:
-    """Fuehrt die geplanten Umzuege aus und protokolliert sie."""
+    """Führt die geplanten Umzüge aus und protokolliert sie."""
     conn = get_conn()
     batch = uuid.uuid4().hex[:12]
     done, failed = 0, 0
@@ -216,7 +216,7 @@ def undo(batch: str) -> dict:
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(source), str(destination))
         except OSError as exc:
-            log.warning("Ruecknahme fehlgeschlagen: %s", exc)
+            log.warning("Rücknahme fehlgeschlagen: %s", exc)
             failed += 1
             continue
         if row["clip_id"]:
@@ -252,7 +252,7 @@ def prune_empty_dirs(directories: set[Path]) -> int:
                 entries = list(current.iterdir())
             except OSError:
                 break
-            # Systemdateien wie .DS_Store zaehlen nicht als Inhalt
+            # Systemdateien wie .DS_Store zählen nicht als Inhalt
             if any(entry.name not in {".DS_Store", "Thumbs.db"} for entry in entries):
                 break
             try:
@@ -275,7 +275,7 @@ def _log_move(conn, batch: str, move: PlannedMove, state: str, error: str | None
 
 
 def target_for_new_file(filename: str, recorded_at: datetime | None, camera: str | None) -> str:
-    """Zielpfad fuer eine frisch hochgeladene Datei."""
+    """Zielpfad für eine frisch hochgeladene Datei."""
     when = recorded_at or datetime.now()
     directory = runtime.organize_pattern.format(
         year=f"{when.year:04d}",

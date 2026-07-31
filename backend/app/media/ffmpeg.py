@@ -1,4 +1,4 @@
-"""Duenne Schicht um ffmpeg, inklusive Erkennung der Hardware-Beschleunigung."""
+"""Dünne Schicht um ffmpeg, inklusive Erkennung der Hardware-Beschleunigung."""
 
 from __future__ import annotations
 
@@ -22,13 +22,13 @@ class FFmpegError(RuntimeError):
 
 
 def run(args: list[str], timeout: int = 900) -> str:
-    """Fuehrt ffmpeg aus und liefert stderr zurueck (dort loggt ffmpeg)."""
+    """Führt ffmpeg aus und liefert stderr zurück (dort loggt ffmpeg)."""
     try:
         proc = subprocess.run(
             args, capture_output=True, text=True, timeout=timeout, errors="replace"
         )
     except subprocess.TimeoutExpired as exc:
-        raise FFmpegError(f"ffmpeg-Zeitlimit nach {timeout}s ueberschritten") from exc
+        raise FFmpegError(f"ffmpeg-Zeitlimit nach {timeout}s überschritten") from exc
     if proc.returncode != 0:
         tail = (proc.stderr or "").strip().splitlines()[-6:]
         raise FFmpegError(
@@ -79,7 +79,7 @@ def has_filter(name: str) -> bool:
 
 @functools.lru_cache(maxsize=1)
 def vaapi_available() -> bool:
-    """Prueft einmalig, ob VAAPI wirklich nutzbar ist (Geraet + Rechte + Encoder)."""
+    """Prüft einmalig, ob VAAPI wirklich nutzbar ist (Gerät + Rechte + Encoder)."""
     if runtime.hwaccel == "off":
         return False
     if not VAAPI_DEVICE.exists():
@@ -106,7 +106,7 @@ def vaapi_available() -> bool:
     except FFmpegError as exc:
         log.info("VAAPI nicht nutzbar, es wird die CPU verwendet (%s)", exc)
         return False
-    log.info("VAAPI aktiv: Hardware-Encoding ueber %s", VAAPI_DEVICE)
+    log.info("VAAPI aktiv: Hardware-Encoding über %s", VAAPI_DEVICE)
     return True
 
 
@@ -115,12 +115,12 @@ def describe_acceleration() -> str:
 
 
 def reset_acceleration_cache() -> None:
-    """Nach einer Aenderung der Einstellung neu pruefen."""
+    """Nach einer Änderung der Einstellung neu prüfen."""
     vaapi_available.cache_clear()
 
 
 def version(binary: str) -> str | None:
-    """Erste Zeile von `-version`, fuer die Systempruefung im Assistenten."""
+    """Erste Zeile von `-version`, für die Systemprüfung im Assistenten."""
     try:
         proc = subprocess.run(
             [binary, "-version"], capture_output=True, text=True, timeout=15

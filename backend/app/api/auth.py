@@ -10,7 +10,7 @@ from .deps import auth_disabled, clear_session, current_user, issue_session, ver
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-# Sehr einfache Bremse gegen Durchprobieren von Passwoertern
+# Sehr einfache Bremse gegen Durchprobieren von Passwörtern
 _failures: dict[str, list[float]] = {}
 MAX_FAILURES = 8
 WINDOW = 300.0

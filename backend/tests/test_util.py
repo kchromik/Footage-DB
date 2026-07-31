@@ -1,4 +1,4 @@
-"""Tests fuer die Hilfsfunktionen: Datumsformate, Namen, Pfade, Pruefsummen."""
+"""Tests für die Hilfsfunktionen: Datumsformate, Namen, Pfade, Prüfsummen."""
 
 from __future__ import annotations
 
@@ -76,8 +76,8 @@ class TestSafeName:
 class TestSafeJoin:
     def test_erlaubt_unterordner(self, media_root):
         (media_root / "a" / "b").mkdir(parents=True)
-        # safe_join loest Symlinks auf (auf macOS zeigt /var nach /private/var),
-        # deshalb wird gegen den aufgeloesten Wurzelpfad geprueft
+        # safe_join löst Symlinks auf (auf macOS zeigt /var nach /private/var),
+        # deshalb wird gegen den aufgelösten Wurzelpfad geprüft
         assert safe_join(media_root, "a/b").is_relative_to(media_root.resolve())
 
     def test_blockiert_ausbruch(self, media_root):
@@ -116,7 +116,7 @@ class TestContentHash:
         (3840, 2160, "4K"),
         (4096, 2160, "4K"),
         (1920, 1080, "1080p"),
-        (1080, 1920, "1080p"),  # hochkant zaehlt die lange Kante
+        (1080, 1920, "1080p"),  # hochkant zählt die lange Kante
         (1280, 720, "720p"),
         (7680, 4320, "8K"),
         (None, None, None),

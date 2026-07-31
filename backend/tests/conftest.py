@@ -73,7 +73,7 @@ def make_clip(
     audio: bool = False,
     extra: list[str] | None = None,
 ) -> Path:
-    """Erzeugt eine kleine echte Videodatei fuer die Tests."""
+    """Erzeugt eine kleine echte Videodatei für die Tests."""
     path.parent.mkdir(parents=True, exist_ok=True)
     args = [
         "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",

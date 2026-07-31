@@ -2,7 +2,7 @@
 
 Der Vektorindex liegt als numpy-Matrix im Arbeitsspeicher. Bei 50.000 Clips
 sind das rund 50 MB und eine Suche dauert wenige Millisekunden, deshalb
-braucht es keine zusaetzliche Vektordatenbank.
+braucht es keine zusätzliche Vektordatenbank.
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ class VectorIndex:
     def upsert(self, clip_id: int, vector: np.ndarray) -> None:
         with self._lock:
             if not self._loaded:
-                return  # wird beim naechsten Laden ohnehin mitgenommen
+                return  # wird beim nächsten Laden ohnehin mitgenommen
             position = np.searchsorted(self._ids, clip_id)
             if position < len(self._ids) and self._ids[position] == clip_id:
                 self._matrix[position] = vector
@@ -116,7 +116,7 @@ def embed_clip(
         conn.execute(
             "UPDATE clips SET embed_status='skipped' WHERE id=?", (clip_id,)
         )
-        log.debug("Embedding uebersprungen (%s)", exc)
+        log.debug("Embedding übersprungen (%s)", exc)
         return
 
     settings.tmp_dir.mkdir(parents=True, exist_ok=True)

@@ -1,4 +1,4 @@
-"""Tests fuer den Einrichtungsassistenten und die Einstellungen zur Laufzeit."""
+"""Tests für den Einrichtungsassistenten und die Einstellungen zur Laufzeit."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ class TestPasswortHash:
         assert not verify_password("falsch", stored)
 
     def test_zwei_hashes_sind_verschieden(self):
-        # zufaelliges Salz pro Aufruf
+        # zufälliges Salz pro Aufruf
         assert hash_password("gleich") != hash_password("gleich")
 
     def test_kaputter_hash_wird_abgelehnt(self):
@@ -113,7 +113,7 @@ class TestOhnePasswort:
         assert runtime.rescan_interval_minutes == 0
         assert verify_password("supergeheim", runtime.password_hash)
 
-        # Der Assistent haelt die Sitzung offen, sonst faende man sich sofort
+        # Der Assistent hält die Sitzung offen, sonst fände man sich sofort
         # im Anmeldebildschirm wieder
         assert fresh.get("/api/clips").status_code == 200
 
@@ -171,8 +171,8 @@ class TestEinstellungen:
         werte = client.get("/api/settings").json()
         assert werte["proxy_height"] == settings.proxy_height
 
-        geaendert = client.patch("/api/settings", json={"proxy_height": 540}).json()
-        assert geaendert["proxy_height"] == 540
+        geändert = client.patch("/api/settings", json={"proxy_height": 540}).json()
+        assert geändert["proxy_height"] == 540
         assert runtime.proxy_height == 540
 
     def test_ungueltige_werte(self, mit_env_passwort):

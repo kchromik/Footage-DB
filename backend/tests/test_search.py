@@ -1,4 +1,4 @@
-"""Tests fuer Suchabfragen, Facetten und Volltextindex."""
+"""Tests für Suchabfragen, Facetten und Volltextindex."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ class TestFtsExpression:
         assert fts_expression("sonne strand") == '"sonne"* AND "strand"*'
 
     def test_sonderzeichen_werden_entfernt(self):
-        # Anfuehrungszeichen und Klammern duerfen die FTS-Abfrage nicht zerlegen
+        # Anführungszeichen und Klammern dürfen die FTS-Abfrage nicht zerlegen
         assert fts_expression('sonne" (strand)') == '"sonne"* AND "strand"*'
 
     def test_einzelne_buchstaben_werden_verworfen(self):

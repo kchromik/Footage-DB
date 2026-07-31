@@ -1,4 +1,4 @@
-"""Integrationstest ueber die ganze Kette: Scan, Vorschau, Suche, Upload, Download."""
+"""Integrationstest über die ganze Kette: Scan, Vorschau, Suche, Upload, Download."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from conftest import make_clip, needs_ffmpeg
 def wait_for_queue(client: TestClient, timeout: float = 120.0) -> dict:
     """Wartet, bis Scan und alle Hintergrundaufgaben durch sind.
 
-    Der Scan laeuft in einem eigenen Thread und reiht seine Jobs erst nach und
+    Der Scan läuft in einem eigenen Thread und reiht seine Jobs erst nach und
     nach ein. Deshalb reicht "Warteschlange gerade leer" nicht aus, es muss
     mehrmals hintereinander ruhig sein.
     """
@@ -110,7 +110,7 @@ class TestKompletterDurchlauf:
         assert poster.headers["content-type"] == "image/webp"
         assert len(poster.content) > 500
 
-        # Sprite fuer die Vorschau beim Drueberfahren
+        # Sprite für die Vorschau beim Drüberfahren
         assert clip["sprite"] is not None
         assert clip["sprite"]["count"] >= 4
         sprite = client.get(f"/api/media/{clip['id']}/sprite")
@@ -157,15 +157,15 @@ class TestKompletterDurchlauf:
 
         ids = [item["id"] for item in client.get("/api/clips").json()["items"]]
 
-        geaendert = client.patch(
+        geändert = client.patch(
             f"/api/clips/{ids[0]}",
             json={"favorite": True, "notes": "Titelbild", "tags": ["Intro", "Berlin"]},
         ).json()
-        assert geaendert["favorite"] is True
-        assert geaendert["notes"] == "Titelbild"
-        assert {"Intro", "Berlin"} <= {tag["name"] for tag in geaendert["tags"]}
+        assert geändert["favorite"] is True
+        assert geändert["notes"] == "Titelbild"
+        assert {"Intro", "Berlin"} <= {tag["name"] for tag in geändert["tags"]}
 
-        # Ueber ein manuell gesetztes Tag laesst sich suchen
+        # Über ein manuell gesetztes Tag lässt sich suchen
         assert client.get("/api/clips?q=Berlin&mode=text").json()["total"] == 1
         assert client.get("/api/clips?favorite=true").json()["total"] == 1
 
@@ -191,7 +191,7 @@ class TestKompletterDurchlauf:
         ).json()
         chunk_size = init["chunk_size"]
 
-        # Erster Block, danach so tun als waere die Verbindung weg
+        # Erster Block, danach so tun als wäre die Verbindung weg
         client.put(f"/api/uploads/{init['id']}/chunk/0", content=daten[:chunk_size])
 
         fortsetzung = client.post(
@@ -214,7 +214,7 @@ class TestKompletterDurchlauf:
     def test_upload_ueber_dateisystemgrenze(self, client, media_root, tmp_path, monkeypatch):
         """Auf einem NAS sind /data und /media getrennte Mounts.
 
-        Dann schlaegt ein blosses Umbenennen mit EXDEV fehl, die fertige Datei
+        Dann schlägt ein bloßes Umbenennen mit EXDEV fehl, die fertige Datei
         muss stattdessen kopiert werden.
         """
         import errno
@@ -222,7 +222,7 @@ class TestKompletterDurchlauf:
 
         from app.api import uploads as upload_api
 
-        # Zwischenablage ins Datenverzeichnis zwingen, so als waere der
+        # Zwischenablage ins Datenverzeichnis zwingen, so als wäre der
         # Medienordner nicht beschreibbar
         upload_api.staging_dir.cache_clear()
         monkeypatch.setattr(upload_api, "staging_dir", lambda: settings.uploads_dir)
@@ -262,7 +262,7 @@ class TestKompletterDurchlauf:
         assert not list(settings.uploads_dir.glob("*.part"))
 
     def test_zwischenablage_liegt_im_medienordner(self, client, media_root):
-        """Wenn moeglich neben dem Ziel, damit am Ende nur umbenannt wird."""
+        """Wenn möglich neben dem Ziel, damit am Ende nur umbenannt wird."""
         from app.api import uploads as upload_api
 
         upload_api.staging_dir.cache_clear()
@@ -274,7 +274,7 @@ class TestKompletterDurchlauf:
         ).json()
         antwort = client.post(f"/api/uploads/{init['id']}/complete")
         assert antwort.status_code == 409
-        assert "unvollstaendig" in antwort.json()["detail"]
+        assert "unvollständig" in antwort.json()["detail"]
 
     def test_falscher_dateityp_wird_abgelehnt(self, client):
         antwort = client.post(
@@ -339,15 +339,15 @@ class TestKompletterDurchlauf:
         assert plan["preview"][0]["to"].endswith("/C0001.MP4")
         assert "Sony" in plan["preview"][0]["to"]
 
-        # Ohne Bestaetigung passiert nichts
+        # Ohne Bestätigung passiert nichts
         assert client.post("/api/organize/apply", json={"confirm": False}).status_code == 400
 
         ergebnis = client.post("/api/organize/apply", json={"confirm": True}).json()
         assert ergebnis["moved"] == 1
         assert not (media_root / "Rushes").exists()
 
-        zurueck = client.post(f"/api/organize/undo/{ergebnis['batch']}").json()
-        assert zurueck["reverted"] == 1
+        zurück = client.post(f"/api/organize/undo/{ergebnis['batch']}").json()
+        assert zurück["reverted"] == 1
         assert (media_root / "Rushes" / "C0001.MP4").exists()
 
 
@@ -372,10 +372,10 @@ class TestUploadMitTags:
 
         clip = client.get(f"/api/clips/{fertig['clip_id']}").json()
         manuell = {t["name"] for t in clip["tags"] if t["source"] == "manual"}
-        # Doppelte und leere Eintraege werden verworfen
+        # Doppelte und leere Einträge werden verworfen
         assert manuell == {"Berlin", "Drohne"}
 
-        # Und danach laesst sich damit filtern
+        # Und danach lässt sich damit filtern
         wait_for_queue(client)
         assert client.get("/api/clips?tag=Berlin").json()["total"] == 1
         assert client.get("/api/clips?q=Drohne&mode=text").json()["total"] == 1
@@ -436,7 +436,7 @@ class TestSpherical:
 
         from app.metadata.probe import detect_spherical
 
-        # Exakt 2:1 und gross genug: praktisch immer ein Vollpanorama
+        # Exakt 2:1 und groß genug: praktisch immer ein Vollpanorama
         assert detect_spherical({}, {}, Path("a.mp4"), 5760, 2880)[0] == "equirectangular"
         # Zu klein, das kann auch ein Zuschnitt sein
         assert detect_spherical({}, {}, Path("a.mp4"), 1920, 960)[0] is None

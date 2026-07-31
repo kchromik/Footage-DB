@@ -43,7 +43,7 @@ export function FilterPanel({ facets, filters, onChange, onReset, collapsed }: P
         <span className="label">Filter</span>
         {active && (
           <button className="btn ghost small" onClick={onReset}>
-            <IconClose size={11} /> Zuruecksetzen
+            <IconClose size={11} /> Zurücksetzen
           </button>
         )}
       </div>
@@ -150,7 +150,7 @@ export function FilterPanel({ facets, filters, onChange, onReset, collapsed }: P
 
         <div className="facet">
           <div className="facet-head">
-            <span className="label">Laenge in Sekunden</span>
+            <span className="label">Länge in Sekunden</span>
           </div>
           <div className="range-row">
             <input
@@ -180,8 +180,8 @@ export function FilterPanel({ facets, filters, onChange, onReset, collapsed }: P
             </div>
             <div className="facet-list" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
               {visibleFolders.map((entry) => {
-                // Der Wurzelordner heisst in der Datenbank "", als Filterwert
-                // steht dafuer "/", sonst waere er nicht von "kein Filter"
+                // Der Wurzelordner heißt in der Datenbank "", als Filterwert
+                // steht dafür "/", sonst wäre er nicht von "kein Filter"
                 // zu unterscheiden.
                 const value = entry.name || '/'
                 return (

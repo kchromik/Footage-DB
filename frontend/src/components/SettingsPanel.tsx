@@ -6,7 +6,7 @@ interface Props {
   notify: (message: string, kind?: 'ok' | 'error') => void
 }
 
-/** Dieselben Werte wie im Einrichtungsassistenten, nur spaeter aenderbar. */
+/** Dieselben Werte wie im Einrichtungsassistenten, nur später änderbar. */
 export function SettingsPanel({ notify }: Props) {
   const [values, setValues] = useState<AppSettings | null>(null)
   const [password, setPassword] = useState('')
@@ -53,7 +53,7 @@ export function SettingsPanel({ notify }: Props) {
       {open && values && (
         <div style={{ marginTop: 12 }}>
           <div className="form-row">
-            <span className="label">Qualitaet der Previews</span>
+            <span className="label">Qualität der Previews</span>
             <div className="option-grid">
               {[
                 { h: 540, crf: 28, title: 'Sparsam', desc: '540p' },
@@ -72,8 +72,8 @@ export function SettingsPanel({ notify }: Props) {
               ))}
             </div>
             <p className="note">
-              Gilt fuer neu erzeugte Previews. Vorhandene bleiben, bis du einen Clip neu
-              einlesen laesst.
+              Gilt für neu erzeugte Previews. Vorhandene bleiben, bis du einen Clip neu
+              einlesen lässt.
             </p>
           </div>
 
@@ -116,7 +116,7 @@ export function SettingsPanel({ notify }: Props) {
           <div className="switch-row">
             <div className="text">
               <strong>Suche nach Bildinhalt</strong>
-              <span>Neue Clips werden dann zusaetzlich analysiert.</span>
+              <span>Neue Clips werden dann zusätzlich analysiert.</span>
             </div>
             <button
               className={`switch${values.semantic_enabled ? ' on' : ''}`}
@@ -139,7 +139,7 @@ export function SettingsPanel({ notify }: Props) {
 
           <div className="switch-row">
             <div className="text">
-              <strong>Regelmaessiger Rescan</strong>
+              <strong>Regelmäßiger Rescan</strong>
               <span>
                 {values.rescan_interval_minutes > 0
                   ? `alle ${values.rescan_interval_minutes} Minuten`
@@ -160,7 +160,7 @@ export function SettingsPanel({ notify }: Props) {
           <div className="divider" />
 
           <div className="form-row" style={{ marginBottom: 0 }}>
-            <span className="label">Passwort aendern</span>
+            <span className="label">Passwort ändern</span>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 className="field"

@@ -25,7 +25,7 @@ interface Draft {
 
 const STEPS = [
   { id: 'willkommen', label: 'Willkommen' },
-  { id: 'system', label: 'Systempruefung' },
+  { id: 'system', label: 'Systemprüfung' },
   { id: 'zugang', label: 'Zugang' },
   { id: 'bibliothek', label: 'Bibliothek' },
   { id: 'verarbeitung', label: 'Verarbeitung' },
@@ -77,7 +77,7 @@ export function SetupWizard({ status, onDone }: Props) {
   const set = (patch: Partial<Draft>) => setDraft((current) => ({ ...current, ...patch }))
   const current = STEPS[step].id
 
-  /* Der Zugangsschritt entfaellt, wenn das Passwort schon in der .env steht */
+  /* Der Zugangsschritt entfällt, wenn das Passwort schon in der .env steht */
   const skipZugang = status.password_from_env
   const visibleSteps = useMemo(
     () => STEPS.filter((entry) => entry.id !== 'zugang' || !skipZugang),
@@ -91,7 +91,7 @@ export function SetupWizard({ status, onDone }: Props) {
         .systemCheck()
         .then((result) => {
           setCheck(result)
-          // Vorschlaege an die gefundene Hardware anpassen
+          // Vorschläge an die gefundene Hardware anpassen
           set({
             worker_count: Math.max(2, Math.min(4, Math.floor(result.cpu_count / 2))),
             hwaccel: result.hwaccel.available ? 'auto' : 'off',
@@ -194,7 +194,7 @@ export function SetupWizard({ status, onDone }: Props) {
                 <p>
                   In wenigen Schritten ist deine B-Roll-Bibliothek eingerichtet. Wir
                   schauen kurz, ob alles bereit ist, legen deinen Zugang an und
-                  klaeren, wie dein Material verarbeitet werden soll.
+                  klären, wie dein Material verarbeitet werden soll.
                 </p>
               </header>
               <div className="wizard-content">
@@ -210,19 +210,19 @@ export function SetupWizard({ status, onDone }: Props) {
                 </div>
                 <div className="switch-row">
                   <div className="text">
-                    <strong>Nichts wird verschoben, ausser du sagst es</strong>
+                    <strong>Nichts wird verschoben, außer du sagst es</strong>
                     <span>
                       Das Einsortieren nach Jahr und Kamera ist ein eigener Schritt, den du
-                      spaeter startest. Er zeigt vorher jede geplante Bewegung und laesst
-                      sich komplett rueckgaengig machen.
+                      später startest. Er zeigt vorher jede geplante Bewegung und lässt
+                      sich komplett rückgängig machen.
                     </span>
                   </div>
                 </div>
                 <div className="switch-row">
                   <div className="text">
-                    <strong>Alles laeuft lokal</strong>
+                    <strong>Alles läuft lokal</strong>
                     <span>
-                      Auch die Suche nach Bildinhalten. Dafuer wird einmalig ein Modell
+                      Auch die Suche nach Bildinhalten. Dafür wird einmalig ein Modell
                       heruntergeladen, danach braucht FootageDB kein Internet mehr.
                     </span>
                   </div>
@@ -243,7 +243,7 @@ export function SetupWizard({ status, onDone }: Props) {
                   }}
                 >
                   <div>
-                    <h1>Systempruefung</h1>
+                    <h1>Systemprüfung</h1>
                     <p>Ein kurzer Blick, ob alles vorhanden und erreichbar ist.</p>
                   </div>
                   <button
@@ -254,7 +254,7 @@ export function SetupWizard({ status, onDone }: Props) {
                       setError('')
                     }}
                   >
-                    Erneut pruefen
+                    Erneut prüfen
                   </button>
                 </div>
               </header>
@@ -294,10 +294,10 @@ export function SetupWizard({ status, onDone }: Props) {
                       <i className="dot" />
                       <span className="name">Rechte</span>
                       <span className="value">
-                        Ordner gehoert {check.permissions.media_uid}:
+                        Ordner gehört {check.permissions.media_uid}:
                         {check.permissions.media_gid}, Rechte {check.permissions.mode}
                         <br />
-                        Container laeuft als {check.permissions.container_uid}:
+                        Container läuft als {check.permissions.container_uid}:
                         {check.permissions.container_gid}
                       </span>
                     </div>
@@ -318,9 +318,9 @@ export function SetupWizard({ status, onDone }: Props) {
                       <span className="name">Video-Encoding</span>
                       <span className="value">
                         {check.hwaccel.available
-                          ? `Hardware ueber ${check.hwaccel.device}`
+                          ? `Hardware über ${check.hwaccel.device}`
                           : check.hwaccel.device_present
-                            ? 'Geraet da, aber nicht nutzbar, es wird die CPU verwendet'
+                            ? 'Gerät da, aber nicht nutzbar, es wird die CPU verwendet'
                             : 'CPU (kein /dev/dri durchgereicht)'}
                         <br />
                         {check.cpu_count} CPU-Kerne
@@ -349,7 +349,7 @@ export function SetupWizard({ status, onDone }: Props) {
                 ) : (
                   <div className="hint-box bad">
                     <span className="bar" />
-                    <span>Die Pruefung ist fehlgeschlagen: {error}</span>
+                    <span>Die Prüfung ist fehlgeschlagen: {error}</span>
                   </div>
                 )}
               </div>
@@ -361,7 +361,7 @@ export function SetupWizard({ status, onDone }: Props) {
               <header className="wizard-head">
                 <h1>Zugang einrichten</h1>
                 <p>
-                  Damit meldest du dich kuenftig an. Das Passwort wird nur als Hash
+                  Damit meldest du dich künftig an. Das Passwort wird nur als Hash
                   gespeichert, nicht im Klartext.
                 </p>
               </header>
@@ -397,7 +397,7 @@ export function SetupWizard({ status, onDone }: Props) {
                   />
                   {draft.password2 && draft.password !== draft.password2 && (
                     <p className="note" style={{ color: 'var(--danger)' }}>
-                      Die beiden Eingaben stimmen nicht ueberein.
+                      Die beiden Eingaben stimmen nicht überein.
                     </p>
                   )}
                 </div>
@@ -459,9 +459,9 @@ export function SetupWizard({ status, onDone }: Props) {
                     <div className="hint-box">
                       <span className="bar" />
                       <span>
-                        Die Schaetzung ist eine grobe Hausnummer. Vorschaubilder sind
-                        schnell da, die Previews brauchen den Grossteil der Zeit. Du
-                        kannst waehrenddessen schon suchen.
+                        Die Schätzung ist eine grobe Hausnummer. Vorschaubilder sind
+                        schnell da, die Previews brauchen den Großteil der Zeit. Du
+                        kannst währenddessen schon suchen.
                       </span>
                     </div>
                   </>
@@ -470,8 +470,8 @@ export function SetupWizard({ status, onDone }: Props) {
                     <span className="bar" />
                     <span>
                       Im Medienordner liegt noch kein Videomaterial. Das ist kein Problem:
-                      leg Dateien per NAS-Freigabe hinein oder lade sie spaeter direkt in
-                      der Oberflaeche hoch.
+                      leg Dateien per NAS-Freigabe hinein oder lade sie später direkt in
+                      der Oberfläche hoch.
                     </span>
                   </div>
                 )}
@@ -485,12 +485,12 @@ export function SetupWizard({ status, onDone }: Props) {
                 <h1>Verarbeitung</h1>
                 <p>
                   FootageDB erzeugt pro Clip ein kleines Preview, damit jedes Format im
-                  Browser laeuft. Diese Werte kannst du spaeter jederzeit aendern.
+                  Browser läuft. Diese Werte kannst du später jederzeit ändern.
                 </p>
               </header>
               <div className="wizard-content">
                 <div className="form-row">
-                  <span className="label">Qualitaet der Previews</span>
+                  <span className="label">Qualität der Previews</span>
                   <div className="option-grid">
                     {[
                       { h: 540, crf: 28, title: 'Sparsam', desc: '540p, wenig Platz und schnell' },
@@ -527,7 +527,7 @@ export function SetupWizard({ status, onDone }: Props) {
                     </span>
                   </div>
                   <p className="note">
-                    Mehr geht schneller, belastet das NAS aber staerker. Bei{' '}
+                    Mehr geht schneller, belastet das NAS aber stärker. Bei{' '}
                     {check?.cpu_count ?? '?'} Kernen sind 2 bis 4 ein guter Wert.
                   </p>
                 </div>
@@ -540,7 +540,7 @@ export function SetupWizard({ status, onDone }: Props) {
                     <span>
                       {check?.hwaccel.available
                         ? 'Die iGPU ist nutzbar, das beschleunigt die Previews deutlich.'
-                        : 'Auf diesem System nicht verfuegbar, es wird die CPU verwendet.'}
+                        : 'Auf diesem System nicht verfügbar, es wird die CPU verwendet.'}
                     </span>
                   </div>
                   <Switch
@@ -553,8 +553,8 @@ export function SetupWizard({ status, onDone }: Props) {
                   <div className="text">
                     <strong>Suche nach Bildinhalt</strong>
                     <span>
-                      Findet Clips ueber eine Beschreibung wie "Sonnenuntergang am Wasser".
-                      Laedt einmalig rund 600 MB und rechnet pro Clip ein paar Sekunden
+                      Findet Clips über eine Beschreibung wie "Sonnenuntergang am Wasser".
+                      Lädt einmalig rund 600 MB und rechnet pro Clip ein paar Sekunden
                       mehr.
                       {check && !check.internet && ' Aktuell ist kein Internet erreichbar.'}
                     </span>
@@ -567,10 +567,10 @@ export function SetupWizard({ status, onDone }: Props) {
 
                 <div className="switch-row">
                   <div className="text">
-                    <strong>Regelmaessig nach neuen Dateien schauen</strong>
+                    <strong>Regelmäßig nach neuen Dateien schauen</strong>
                     <span>
-                      Zusaetzlich zur Live-Ueberwachung des Ordners, stuendlich. Sinnvoll
-                      bei Netzlaufwerken, wo Aenderungen nicht immer gemeldet werden.
+                      Zusätzlich zur Live-Überwachung des Ordners, stündlich. Sinnvoll
+                      bei Netzlaufwerken, wo Änderungen nicht immer gemeldet werden.
                     </span>
                   </div>
                   <Switch
@@ -591,7 +591,7 @@ export function SetupWizard({ status, onDone }: Props) {
               <header className="wizard-head">
                 <h1>Ablage neuer Dateien</h1>
                 <p>
-                  Wohin sollen Dateien wandern, die du ueber die Oberflaeche hochlaedst?
+                  Wohin sollen Dateien wandern, die du über die Oberfläche hochlädst?
                 </p>
               </header>
               <div className="wizard-content">
@@ -635,9 +635,9 @@ export function SetupWizard({ status, onDone }: Props) {
                 <div className="hint-box">
                   <span className="bar" />
                   <span>
-                    Dein vorhandener Bestand bleibt unangetastet. Wenn du ihn spaeter
+                    Dein vorhandener Bestand bleibt unangetastet. Wenn du ihn später
                     ebenfalls in dieses Schema bringen willst, findest du das unter
-                    Werkzeuge, mit Vorschau und Rueckwaertsgang.
+                    Werkzeuge, mit Vorschau und Rückwärtsgang.
                   </span>
                 </div>
               </div>
@@ -662,7 +662,7 @@ export function SetupWizard({ status, onDone }: Props) {
                   <dd>{status.media_root}</dd>
                   <dt>Gefunden</dt>
                   <dd>
-                    {preview ? `${preview.count} Dateien, ${preview.size_label}` : 'nicht geprueft'}
+                    {preview ? `${preview.count} Dateien, ${preview.size_label}` : 'nicht geprüft'}
                   </dd>
                   <dt>Previews</dt>
                   <dd>
@@ -696,8 +696,8 @@ export function SetupWizard({ status, onDone }: Props) {
                   <div className="text">
                     <strong>Bibliothek jetzt einlesen</strong>
                     <span>
-                      Startet direkt nach dem Abschliessen. Du kannst waehrenddessen schon
-                      stoebern, die Kacheln fuellen sich nach und nach.
+                      Startet direkt nach dem Abschließen. Du kannst währenddessen schon
+                      stöbern, die Kacheln füllen sich nach und nach.
                     </span>
                   </div>
                   <Switch
@@ -722,7 +722,7 @@ export function SetupWizard({ status, onDone }: Props) {
               onClick={() => go(-1)}
               disabled={step === 0 || busy}
             >
-              <IconArrowLeft size={13} /> Zurueck
+              <IconArrowLeft size={13} /> Zurück
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span className="mono" style={{ fontSize: 11, color: 'var(--text-faint)' }}>
@@ -731,7 +731,7 @@ export function SetupWizard({ status, onDone }: Props) {
               </span>
               {current === 'fertig' ? (
                 <button className="btn primary" onClick={finish} disabled={busy}>
-                  {busy ? <span className="spinner" /> : 'Einrichtung abschliessen'}
+                  {busy ? <span className="spinner" /> : 'Einrichtung abschließen'}
                 </button>
               ) : (
                 <button

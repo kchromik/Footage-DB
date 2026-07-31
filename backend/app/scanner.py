@@ -1,4 +1,4 @@
-"""Durchsucht den Medienordner und haelt die Datenbank aktuell."""
+"""Durchsucht den Medienordner und hält die Datenbank aktuell."""
 
 from __future__ import annotations
 
@@ -76,9 +76,9 @@ def iter_media_files(root: Path) -> list[tuple[str, os.stat_result]]:
 
 
 def scan(mark_missing: bool = True) -> ScanResult:
-    """Vollstaendiger Durchlauf durch den Medienordner."""
+    """Vollständiger Durchlauf durch den Medienordner."""
     if not _scan_lock.acquire(blocking=False):
-        log.info("Scan laeuft bereits, uebersprungen")
+        log.info("Scan läuft bereits, übersprungen")
         return ScanResult()
 
     result = ScanResult()
@@ -159,13 +159,13 @@ def is_scanning() -> bool:
     return _scan_lock.locked()
 
 
-# --- Dateiueberwachung --------------------------------------------------
+# --- Dateiüberwachung --------------------------------------------------
 
 
 class _DebouncedRescan:
     """Sammelt Dateisystem-Ereignisse und startet danach einen Scan.
 
-    Beim Kopieren grosser Dateien auf das NAS feuert das Dateisystem viele
+    Beim Kopieren großer Dateien auf das NAS feuert das Dateisystem viele
     Ereignisse hintereinander. Wir warten deshalb, bis Ruhe eingekehrt ist.
     """
 
@@ -202,7 +202,7 @@ _debounced = _DebouncedRescan()
 
 
 def start_watcher() -> None:
-    """Beobachtet den Medienordner, faellt bei Netzlaufwerken auf Polling zurueck."""
+    """Beobachtet den Medienordner, fällt bei Netzlaufwerken auf Polling zurück."""
     global _observer
     if not settings.watch_enabled or _observer is not None:
         return
@@ -211,7 +211,7 @@ def start_watcher() -> None:
         from watchdog.observers import Observer
         from watchdog.observers.polling import PollingObserver
     except ImportError:
-        log.warning("watchdog nicht installiert, Dateiueberwachung deaktiviert")
+        log.warning("watchdog nicht installiert, Dateiüberwachung deaktiviert")
         return
 
     extensions = settings.extensions
@@ -234,11 +234,11 @@ def start_watcher() -> None:
             observer.schedule(Handler(), str(settings.media_root), recursive=True)
             observer.start()
             _observer = observer
-            log.info("Dateiueberwachung aktiv (%s)", observer_cls.__name__)
+            log.info("Dateiüberwachung aktiv (%s)", observer_cls.__name__)
             return
         except Exception as exc:  # noqa: BLE001
             log.warning("%s nicht nutzbar: %s", observer_cls.__name__, exc)
-    log.warning("Keine Dateiueberwachung moeglich, es bleibt beim periodischen Rescan")
+    log.warning("Keine Dateiüberwachung möglich, es bleibt beim periodischen Rescan")
 
 
 def stop_watcher() -> None:

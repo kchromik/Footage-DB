@@ -20,7 +20,7 @@ from .deps import require_user
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["system"])
-# Wird unten in router eingehaengt und erbt dadurch den Praefix /api
+# Wird unten in router eingehängt und erbt dadurch den Präfix /api
 secured = APIRouter(dependencies=[Depends(require_user)])
 
 
@@ -94,7 +94,7 @@ def stats() -> dict:
 @secured.post("/scan")
 def trigger_scan() -> dict:
     if scanner.is_scanning():
-        return {"started": False, "detail": "Es laeuft bereits ein Scan"}
+        return {"started": False, "detail": "Es läuft bereits ein Scan"}
     scanner.scan_async()
     return {"started": True}
 
@@ -134,7 +134,7 @@ def purge_missing() -> dict:
 
 @secured.get("/events")
 async def events(request: Request) -> StreamingResponse:
-    """Live-Ereignisse fuer Fortschrittsanzeige und Nachladen von Kacheln."""
+    """Live-Ereignisse für Fortschrittsanzeige und Nachladen von Kacheln."""
     queue = bus.subscribe()
 
     async def generator():

@@ -34,7 +34,7 @@ def _clip(clip_id: int | None) -> sqlite3.Row | None:
 
 
 def _source_for(clip: sqlite3.Row):
-    """Quelle fuer abgeleitete Bilder: bevorzugt der Proxy, sonst das Original."""
+    """Quelle für abgeleitete Bilder: bevorzugt der Proxy, sonst das Original."""
     if clip["proxy_status"] == "ready":
         proxy = paths.proxy_path(clip["id"])
         if proxy.exists():

@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-# Laeuft der Container als root, passen wir den App-Benutzer an PUID/PGID an
-# und starten die App danach ohne root-Rechte. So gehoeren Uploads auf dem NAS
+# Läuft der Container als root, passen wir den App-Benutzer an PUID/PGID an
+# und starten die App danach ohne root-Rechte. So gehören Uploads auf dem NAS
 # dem richtigen Benutzer.
 if [ "$(id -u)" = "0" ]; then
     PUID="${PUID:-1000}"
@@ -26,7 +26,7 @@ if [ "$(id -u)" = "0" ]; then
     mkdir -p "${FDB_DATA_DIR:-/data}"
     chown appuser:appuser "${FDB_DATA_DIR:-/data}" 2>/dev/null || true
     # Unterordner nur anfassen, wenn sie noch nicht passen (spart Zeit bei
-    # grossen Datenverzeichnissen)
+    # großen Datenverzeichnissen)
     find "${FDB_DATA_DIR:-/data}" -maxdepth 2 ! -user appuser -exec chown appuser:appuser {} + 2>/dev/null || true
 
     exec gosu appuser "$@"

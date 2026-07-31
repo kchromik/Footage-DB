@@ -1,8 +1,8 @@
 """Metadaten aus Videodateien lesen.
 
 Dreistufig, weil keine Quelle allein alles liefert:
-1. ffprobe  fuer die technischen Daten (Codec, Aufloesung, Dauer, Farbraum)
-2. exiftool fuer Kamera, Objektiv, Aufnahmedatum und GPS
+1. ffprobe  für die technischen Daten (Codec, Auflösung, Dauer, Farbraum)
+2. exiftool für Kamera, Objektiv, Aufnahmedatum und GPS
 3. Sony-XML-Sidecar, falls vorhanden
 """
 
@@ -161,12 +161,12 @@ def run_ffprobe(path: Path) -> dict[str, Any] | None:
         FFPROBE_TIMEOUT,
     )
     if code != 0:
-        log.warning("ffprobe fehlgeschlagen fuer %s: %s", path.name, err.strip()[:400])
+        log.warning("ffprobe fehlgeschlagen für %s: %s", path.name, err.strip()[:400])
         return None
     try:
         return json.loads(out)
     except json.JSONDecodeError:
-        log.warning("ffprobe lieferte kein gueltiges JSON fuer %s", path.name)
+        log.warning("ffprobe lieferte kein gültiges JSON für %s", path.name)
         return None
 
 
@@ -177,10 +177,10 @@ def run_exiftool(path: Path) -> dict[str, Any]:
     try:
         code, out, err = _run(args, EXIFTOOL_TIMEOUT)
     except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
-        log.debug("exiftool nicht verfuegbar oder zu langsam: %s", exc)
+        log.debug("exiftool nicht verfügbar oder zu langsam: %s", exc)
         return {}
     if code != 0 and not out.strip():
-        log.debug("exiftool fehlgeschlagen fuer %s: %s", path.name, err.strip()[:200])
+        log.debug("exiftool fehlgeschlagen für %s: %s", path.name, err.strip()[:200])
         return {}
     try:
         data = json.loads(out)
@@ -279,7 +279,7 @@ def _clean(value: Any) -> str | None:
 
 
 def probe_file(path: Path, mtime: float | None = None) -> ProbeResult:
-    """Liest alle verfuegbaren Metadaten einer Datei zusammen."""
+    """Liest alle verfügbaren Metadaten einer Datei zusammen."""
     result = ProbeResult()
     if mtime is None:
         mtime = path.stat().st_mtime
@@ -379,7 +379,7 @@ def detect_spherical(
 
     Drei Quellen, in dieser Reihenfolge: die sv3d-Box, die ffprobe als
     Seitendaten meldet, die XMP-Angaben von Google Spatial Media, die
-    exiftool liest, und zuletzt das Seitenverhaeltnis. Ein Vollpanorama ist
+    exiftool liest, und zuletzt das Seitenverhältnis. Ein Vollpanorama ist
     immer exakt 2:1, das kommt sonst praktisch nicht vor.
     """
     projection: str | None = None
@@ -406,7 +406,7 @@ def detect_spherical(
     suffix = path.suffix.lower()
     if not projection and suffix == ".360":
         # GoPro Max legt zwei Spuren in einer eigenen Variante des
-        # Wuerfelformats ab, ohne die uebliche Metadatenbox
+        # Würfelformats ab, ohne die übliche Metadatenbox
         projection = "eac"
     if not projection and suffix == ".insv":
         projection = "dualfisheye"

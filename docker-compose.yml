@@ -21,7 +21,7 @@ services:
       FDB_SEMANTIC_ENABLED: ${FDB_SEMANTIC_ENABLED:-true}
       FDB_RESCAN_INTERVAL_MINUTES: ${FDB_RESCAN_INTERVAL_MINUTES:-60}
       FDB_ORGANIZE_UPLOADS: ${FDB_ORGANIZE_UPLOADS:-true}
-      # leer lassen heisst: Standard {year}/{year}-{month}/{camera}
+      # leer lassen heißt: Standard {year}/{year}-{month}/{camera}
       FDB_ORGANIZE_PATTERN: ${FDB_ORGANIZE_PATTERN:-}
       FDB_LOG_LEVEL: ${FDB_LOG_LEVEL:-INFO}
       PUID: ${PUID:-1000}
@@ -30,8 +30,8 @@ services:
     volumes:
       - ${FDB_MEDIA_PATH:?FDB_MEDIA_PATH fehlt in der .env}:/media
       - ${FDB_DATA_PATH:-./data}:/data
-    # Hardware-Encoding (Intel QuickSync) freischalten: die naechsten zwei
-    # Zeilen einkommentieren. Ohne das laeuft alles per CPU, nur langsamer.
+    # Hardware-Encoding (Intel QuickSync) freischalten: die nächsten zwei
+    # Zeilen einkommentieren. Ohne das läuft alles per CPU, nur langsamer.
     # devices:
     #   - /dev/dri:/dev/dri
     healthcheck:

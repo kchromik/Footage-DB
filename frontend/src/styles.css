@@ -1,5 +1,5 @@
 /* ==========================================================================
-   FootageDB - Oberflaeche im Stil eines Schnittraums:
+   FootageDB - Oberfläche im Stil eines Schnittraums:
    fast schwarzer Hintergrund mit feinem Korn, Bernstein als einziger
    Leuchtakzent, technische Werte durchgehend in Monospace.
    ========================================================================== */
@@ -8,7 +8,7 @@
 @import '@fontsource-variable/jetbrains-mono';
 
 :root {
-  /* Flaechen, von tief nach hoch */
+  /* Flächen, von tief nach hoch */
   --ink-000: #08080a;
   --ink-050: #0b0b0e;
   --ink-100: #101014;
@@ -28,7 +28,7 @@
   --amber-soft: rgba(255, 180, 84, 0.14);
   --amber-line: rgba(255, 180, 84, 0.42);
 
-  /* Farbcodes fuer den Bildlook */
+  /* Farbcodes für den Bildlook */
   --look-log: #ffb454;
   --look-graded: #66d6a8;
   --look-hdr: #b18cff;
@@ -81,7 +81,7 @@ body {
   overscroll-behavior: none;
 }
 
-/* Feines Korn ueber der gesamten Flaeche, gibt dem Schwarz Textur */
+/* Feines Korn über der gesamten Fläche, gibt dem Schwarz Textur */
 body::after {
   content: '';
   position: fixed;
@@ -731,7 +731,7 @@ textarea.field {
   background: linear-gradient(135deg, var(--ink-100), var(--ink-050));
 }
 
-/* Sprite-Ebene fuer die Vorschau beim Drueberfahren */
+/* Sprite-Ebene für die Vorschau beim Drüberfahren */
 .scrub {
   position: absolute;
   top: 50%;
@@ -1000,8 +1000,8 @@ textarea.field {
   grid-template-columns: minmax(0, 1fr) 336px;
   grid-template-rows: minmax(0, 1fr);
   width: min(1340px, 100%);
-  /* Feste Hoehe statt max-height: sonst waechst die rechte Spalte ueber den
-     Bildschirm hinaus und die Knoepfe unten sind nicht mehr erreichbar. */
+  /* Feste Höhe statt max-height: sonst wächst die rechte Spalte über den
+     Bildschirm hinaus und die Knöpfe unten sind nicht mehr erreichbar. */
   height: min(920px, calc(100vh - 48px));
   border-radius: var(--radius-lg);
   background: var(--ink-100);

@@ -1,7 +1,7 @@
 """Einrichtungsassistent und Einstellungsseite.
 
-Der Assistent laeuft einmalig nach der Installation. Solange noch kein Passwort
-gesetzt ist, sind seine Endpunkte offen, sonst kaeme man nicht hinein. Sobald
+Der Assistent läuft einmalig nach der Installation. Solange noch kein Passwort
+gesetzt ist, sind seine Endpunkte offen, sonst käme man nicht hinein. Sobald
 irgendwo ein Passwort hinterlegt ist (aus der .env oder aus dem Assistenten),
 gilt auch hier die normale Anmeldung.
 """
@@ -52,7 +52,7 @@ def allow_setup(request: Request) -> str:
 
 @router.get("/status")
 def status(request: Request) -> dict:
-    """Wird beim Start der Oberflaeche abgefragt, bewusst ohne Anmeldung."""
+    """Wird beim Start der Oberfläche abgefragt, bewusst ohne Anmeldung."""
     return {
         "complete": runtime.setup_complete,
         "has_password": runtime.has_password,
@@ -64,7 +64,7 @@ def status(request: Request) -> dict:
     }
 
 
-# --- Systempruefung -----------------------------------------------------
+# --- Systemprüfung -----------------------------------------------------
 
 
 def _disk(path: Path) -> dict:
@@ -82,11 +82,11 @@ def _disk(path: Path) -> dict:
 
 
 def _ownership(path: Path) -> dict:
-    """Wem gehoert der Ordner, und als wem laeuft der Container?
+    """Wem gehört der Ordner, und als wem läuft der Container?
 
-    Auf einem NAS ist das die haeufigste Fehlerquelle. Ohne Zugang zur
-    Kommandozeile kann man die richtigen Werte fuer PUID und PGID sonst nur
-    raten, deshalb zeigt die Pruefung sie direkt an.
+    Auf einem NAS ist das die häufigste Fehlerquelle. Ohne Zugang zur
+    Kommandozeile kann man die richtigen Werte für PUID und PGID sonst nur
+    raten, deshalb zeigt die Prüfung sie direkt an.
     """
     result = {
         "container_uid": os.geteuid(),
@@ -136,35 +136,35 @@ def system_check(_: str = Depends(allow_setup)) -> dict:
 
     if not media_exists:
         warnings.append(
-            f"Der Medienordner {media} ist nicht da. Pruef das Volume in der "
+            f"Der Medienordner {media} ist nicht da. Prüf das Volume in der "
             "docker-compose.yml."
         )
     elif not media_readable or not media_writable:
         was = "lesbar" if not media_readable else "beschreibbar"
         hinweis = (
-            f"Der Medienordner ist nicht {was}. Er gehoert Benutzer "
+            f"Der Medienordner ist nicht {was}. Er gehört Benutzer "
             f"{rechte['media_uid']} und Gruppe {rechte['media_gid']} (Modus "
-            f"{rechte['mode']}), der Container laeuft als "
+            f"{rechte['mode']}), der Container läuft als "
             f"{rechte['container_uid']}:{rechte['container_gid']}. "
         )
         if rechte["media_uid"] == 0 and rechte["mode"] in {"0000", "0700", "0750"}:
-            # Typisch fuer Freigaben auf NAS-Systemen: die Rechte haengen an
+            # Typisch für Freigaben auf NAS-Systemen: die Rechte hängen an
             # ACLs, die klassischen Unix-Bits sind auf null gesetzt
             hinweis += (
-                "Das sieht nach einer Freigabe aus, deren Rechte ueber die "
-                "Rechteverwaltung deines NAS laufen. Trag dort fuer den Ordner "
+                "Das sieht nach einer Freigabe aus, deren Rechte über die "
+                "Rechteverwaltung deines NAS laufen. Trag dort für den Ordner "
                 "einen Benutzer mit Schreibrecht ein."
             )
             if daten_rechte["media_uid"] not in (None, 0):
                 hinweis += (
-                    f" Dein Datenverzeichnis gehoert "
+                    f" Dein Datenverzeichnis gehört "
                     f"{daten_rechte['media_uid']}:{daten_rechte['media_gid']}, das "
                     f"sind vermutlich deine eigenen IDs. Probier PUID="
                     f"{daten_rechte['media_uid']} und PGID={daten_rechte['media_gid']}."
                 )
             hinweis += (
-                " Als Notloesung geht auch PUID=0 und PGID=0, dann laeuft der "
-                "Container aber als root und alles was er schreibt gehoert root."
+                " Als Notlösung geht auch PUID=0 und PGID=0, dann läuft der "
+                "Container aber als root und alles was er schreibt gehört root."
             )
         else:
             hinweis += (
@@ -177,7 +177,7 @@ def system_check(_: str = Depends(allow_setup)) -> dict:
     if not data_writable:
         warnings.append(
             "Ins Datenverzeichnis kann nicht geschrieben werden. Vorschaubilder und "
-            "Previews koennen so nicht entstehen."
+            "Previews können so nicht entstehen."
         )
 
     tools = {
@@ -189,7 +189,7 @@ def system_check(_: str = Depends(allow_setup)) -> dict:
         warnings.append("ffmpeg fehlt. Ohne ffmpeg gibt es keine Vorschauen.")
     if not tools["exiftool"]:
         warnings.append(
-            "exiftool fehlt. Kamera und Objektiv werden dann nur luecken"
+            "exiftool fehlt. Kamera und Objektiv werden dann nur lücken"
             "haft erkannt."
         )
 
@@ -231,7 +231,7 @@ def _exiftool_version() -> str | None:
 
 
 def _has_internet() -> bool:
-    """Nur relevant fuer den einmaligen Download des CLIP-Modells."""
+    """Nur relevant für den einmaligen Download des CLIP-Modells."""
     import socket
 
     try:
@@ -246,7 +246,7 @@ def _has_internet() -> bool:
 
 @router.get("/preview")
 def preview_media(_: str = Depends(allow_setup)) -> dict:
-    """Zaehlt, was im Medienordner liegt, ohne die Datenbank anzufassen."""
+    """Zählt, was im Medienordner liegt, ohne die Datenbank anzufassen."""
     root = settings.media_root
     if not root.exists():
         return {"available": False, "count": 0, "bytes": 0, "folders": [], "kinds": {}}
@@ -308,9 +308,9 @@ def preview_media(_: str = Depends(allow_setup)) -> dict:
 
 
 def _estimate_minutes(count: int) -> int:
-    """Grobe Hausnummer fuer die erste Verarbeitung.
+    """Grobe Hausnummer für die erste Verarbeitung.
 
-    Erfahrungswert: mit zwei Workern schafft eine NAS-CPU ungefaehr 15 Clips
+    Erfahrungswert: mit zwei Workern schafft eine NAS-CPU ungefähr 15 Clips
     pro Minute, mit Hardware-Encoding deutlich mehr.
     """
     if count <= 0:
@@ -396,8 +396,8 @@ def complete(
     runtime.mark_setup_complete()
     log.info("Einrichtung abgeschlossen")
 
-    # Wurde gerade erst ein Passwort gesetzt, gaebe es sonst keine gueltige
-    # Sitzung und der Assistent wuerde direkt in den Anmeldebildschirm kippen.
+    # Wurde gerade erst ein Passwort gesetzt, gäbe es sonst keine gültige
+    # Sitzung und der Assistent würde direkt in den Anmeldebildschirm kippen.
     if password_set:
         secure = request.url.scheme == "https" or (
             request.headers.get("x-forwarded-proto") == "https"
@@ -420,7 +420,7 @@ def _apply_runtime_changes(worker_count: int | None = None) -> None:
         jobs.start_pool(worker_count)
 
 
-# --- Einstellungen spaeter aendern --------------------------------------
+# --- Einstellungen später ändern --------------------------------------
 
 
 class SettingsPayload(BaseModel):
@@ -452,7 +452,7 @@ def read_settings() -> dict:
         "organize_pattern": runtime.organize_pattern,
         "rescan_interval_minutes": runtime.rescan_interval_minutes,
         "media_root": str(settings.media_root),
-        "restart_hint": "Die Anzahl der Worker wird sofort uebernommen.",
+        "restart_hint": "Die Anzahl der Worker wird sofort übernommen.",
     }
 
 

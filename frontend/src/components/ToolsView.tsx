@@ -43,7 +43,7 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
     <div className="view">
       <div className="view-head">
         <h2>Werkzeuge</h2>
-        <p>Bibliothek einlesen, Dateien einsortieren und aufraeumen.</p>
+        <p>Bibliothek einlesen, Dateien einsortieren und aufräumen.</p>
       </div>
 
       <SettingsPanel notify={notify} />
@@ -51,7 +51,7 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
       <div className="card-block">
         <h3>Bibliothek einlesen</h3>
         <p style={{ margin: '0 0 12px', color: 'var(--text-dim)', fontSize: 12.5 }}>
-          Sucht neue und geaenderte Dateien im Medienordner. Laeuft ausserdem
+          Sucht neue und geänderte Dateien im Medienordner. Läuft außerdem
           automatisch, sobald sich dort etwas tut.
         </p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -61,12 +61,12 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
             onClick={() =>
               run('scan', async () => {
                 const result = await api.scan()
-                notify(result.started ? 'Scan gestartet' : (result.detail ?? 'Laeuft bereits'))
+                notify(result.started ? 'Scan gestartet' : (result.detail ?? 'Läuft bereits'))
               })
             }
           >
             <IconRefresh size={14} />
-            {stats?.scanning ? 'Scan laeuft' : 'Jetzt scannen'}
+            {stats?.scanning ? 'Scan läuft' : 'Jetzt scannen'}
           </button>
           {(stats?.queue.failed ?? 0) > 0 && (
             <button
@@ -98,7 +98,7 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
           <code className="mono" style={{ color: 'var(--amber)' }}>
             {plan?.pattern ?? '{year}/{year}-{month}/{camera}'}
           </code>
-          . Erst planen, danach ausfuehren. Jeder Durchgang laesst sich rueckgaengig machen.
+          . Erst planen, danach ausführen. Jeder Durchgang lässt sich rückgängig machen.
         </p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button
@@ -111,7 +111,7 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
                 notify(
                   result.count === 0
                     ? 'Alles liegt schon richtig'
-                    : `${result.count} Dateien wuerden verschoben`,
+                    : `${result.count} Dateien würden verschoben`,
                 )
               })
             }
@@ -142,8 +142,8 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
           <div style={{ marginTop: 14 }}>
             <div className="mono" style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 8 }}>
               {plan.count} zu verschieben, {plan.already_sorted} bereits richtig
-              {plan.skipped.length > 0 && `, ${plan.skipped.length} uebersprungen`}
-              {plan.truncated && ' (Vorschau gekuerzt)'}
+              {plan.skipped.length > 0 && `, ${plan.skipped.length} übersprungen`}
+              {plan.truncated && ' (Vorschau gekürzt)'}
             </div>
             {plan.preview.length > 0 && (
               <div className="scroll-box">
@@ -171,7 +171,7 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
         {batches.length > 0 && (
           <div style={{ marginTop: 16 }}>
             <div className="label" style={{ marginBottom: 8 }}>
-              Bisherige Durchgaenge
+              Bisherige Durchgänge
             </div>
             {batches.map((batch) => (
               <div
@@ -188,22 +188,22 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
               >
                 <span className="mono" style={{ color: 'var(--text-dim)' }}>
                   {formatDate(batch.created_at, true)} - {batch.done} verschoben
-                  {batch.reverted > 0 && `, ${batch.reverted} zurueckgenommen`}
+                  {batch.reverted > 0 && `, ${batch.reverted} zurückgenommen`}
                 </span>
                 {batch.done > 0 && (
                   <button
                     className="btn ghost small"
                     onClick={() => {
-                      if (!window.confirm('Diesen Durchgang rueckgaengig machen?')) return
+                      if (!window.confirm('Diesen Durchgang rückgängig machen?')) return
                       void run('undo', async () => {
                         const result = await api.undoBatch(batch.batch)
-                        notify(`${result.reverted} Dateien zurueckgelegt`, 'ok')
+                        notify(`${result.reverted} Dateien zurückgelegt`, 'ok')
                         await loadBatches()
                         onLibraryChanged()
                       })
                     }}
                   >
-                    Rueckgaengig
+                    Rückgängig
                   </button>
                 )}
               </div>
@@ -213,7 +213,7 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
       </div>
 
       <div className="card-block">
-        <h3>Aufraeumen</h3>
+        <h3>Aufräumen</h3>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button
             className="btn"
@@ -233,16 +233,16 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
             <button
               className="btn danger"
               onClick={() => {
-                if (!window.confirm(`${stats?.missing} fehlende Eintraege aus der Datenbank entfernen?`))
+                if (!window.confirm(`${stats?.missing} fehlende Einträge aus der Datenbank entfernen?`))
                   return
                 void run('purge', async () => {
                   const result = await api.purgeMissing()
-                  notify(`${result.removed} Eintraege entfernt`, 'ok')
+                  notify(`${result.removed} Einträge entfernt`, 'ok')
                   onLibraryChanged()
                 })
               }}
             >
-              {stats?.missing} fehlende Eintraege entfernen
+              {stats?.missing} fehlende Einträge entfernen
             </button>
           )}
         </div>

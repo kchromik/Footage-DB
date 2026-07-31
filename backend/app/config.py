@@ -1,4 +1,4 @@
-"""Zentrale Konfiguration, gelesen aus Umgebungsvariablen mit Praefix FDB_."""
+"""Zentrale Konfiguration, gelesen aus Umgebungsvariablen mit Präfix FDB_."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ DEFAULT_VIDEO_EXTENSIONS = (
     "mp4,mov,m4v,mxf,mts,m2ts,avi,mkv,webm,wmv,mpg,mpeg,braw,r3d,avchd,insv,360"
 )
 
-# Ordner, die beim Scan grundsaetzlich uebersprungen werden
+# Ordner, die beim Scan grundsätzlich übersprungen werden
 IGNORED_DIRS = {
     "@eaDir",  # Synology Thumbnails
     "#recycle",
@@ -99,7 +99,7 @@ class Settings(BaseSettings):
 
     @property
     def pattern(self) -> str:
-        """Ordnerschema fuer das Einsortieren, mit Standardwert."""
+        """Ordnerschema für das Einsortieren, mit Standardwert."""
         return self.organize_pattern.strip() or "{year}/{year}-{month}/{camera}"
 
     @property

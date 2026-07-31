@@ -1,4 +1,4 @@
-"""Kleine Hilfsfunktionen ohne Abhaengigkeit zum Rest der App."""
+"""Kleine Hilfsfunktionen ohne Abhängigkeit zum Rest der App."""
 
 from __future__ import annotations
 
@@ -13,11 +13,11 @@ HASH_CHUNK = 1024 * 1024  # 1 MB vom Anfang und vom Ende
 
 
 def content_hash(path: Path, size: int | None = None) -> str:
-    """Schnelle Datei-Identitaet.
+    """Schnelle Datei-Identität.
 
-    Liest Anfang und Ende der Datei plus die Groesse. Das reicht, um eine
+    Liest Anfang und Ende der Datei plus die Größe. Das reicht, um eine
     verschobene oder umbenannte Datei sicher wiederzuerkennen, ohne mehrere
-    Gigabyte durch die Pruefsumme zu schicken.
+    Gigabyte durch die Prüfsumme zu schicken.
     """
     if size is None:
         size = path.stat().st_size
@@ -39,7 +39,7 @@ def slugify(value: str, fallback: str = "unbekannt") -> str:
 
 
 def safe_name(value: str, fallback: str = "unbenannt") -> str:
-    """Dateiname ohne Pfadanteile und ohne Zeichen, die Dateisysteme aergern."""
+    """Dateiname ohne Pfadanteile und ohne Zeichen, die Dateisysteme ärgern."""
     value = (value or "").replace("\\", "/").split("/")[-1]
     value = value.replace("\x00", "")
     value = re.sub(r'[<>:"|?*\x00-\x1f]', "_", value).strip(" .")
@@ -47,11 +47,11 @@ def safe_name(value: str, fallback: str = "unbenannt") -> str:
 
 
 def safe_join(root: Path, relative: str) -> Path:
-    """Verhindert Ausbrueche aus dem Medienordner (../.. und Konsorten)."""
+    """Verhindert Ausbrüche aus dem Medienordner (../.. und Konsorten)."""
     candidate = (root / relative).resolve()
     root_resolved = root.resolve()
     if candidate != root_resolved and root_resolved not in candidate.parents:
-        raise ValueError(f"Pfad liegt ausserhalb des Medienordners: {relative}")
+        raise ValueError(f"Pfad liegt außerhalb des Medienordners: {relative}")
     return candidate
 
 
@@ -60,7 +60,7 @@ def rel_posix(path: Path, root: Path) -> str:
 
 
 def parse_datetime(value: str | None) -> datetime | None:
-    """Versteht die gaengigen Zeitformate aus ffprobe und exiftool."""
+    """Versteht die gängigen Zeitformate aus ffprobe und exiftool."""
     if not value:
         return None
     text = str(value).strip()
@@ -143,7 +143,7 @@ def human_size(num: float) -> str:
 
 
 def resolution_label(width: int | None, height: int | None) -> str | None:
-    """Kurzlabel fuer die Aufloesung, an der laengeren Kante orientiert."""
+    """Kurzlabel für die Auflösung, an der längeren Kante orientiert."""
     if not width or not height:
         return None
     long_edge = max(width, height)

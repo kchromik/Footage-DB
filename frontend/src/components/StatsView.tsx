@@ -48,7 +48,7 @@ export function StatsView({ stats }: Props) {
     <div className="view">
       <div className="view-head">
         <h2>Bibliothek</h2>
-        <p>Ein Ueberblick, was in deinem Footage-Ordner steckt.</p>
+        <p>Ein Überblick, was in deinem Footage-Ordner steckt.</p>
       </div>
 
       <div className="stat-grid">
@@ -58,7 +58,7 @@ export function StatsView({ stats }: Props) {
         </div>
         <div className="stat">
           <div className="value">{formatLongDuration(stats.seconds)}</div>
-          <div className="name">Gesamtlaenge</div>
+          <div className="name">Gesamtlänge</div>
         </div>
         <div className="stat">
           <div className="value">{stats.size_label}</div>

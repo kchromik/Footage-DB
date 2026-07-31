@@ -16,7 +16,7 @@ export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
   const [tagsVersion, setTagsVersion] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const { tasks, add, cancel, retry, clearFinished, active } = useUploader((clipId) => {
-    // Neu angelegte Tags sollen beim naechsten Mal in den Vorschlaegen stehen
+    // Neu angelegte Tags sollen beim nächsten Mal in den Vorschlägen stehen
     setTagsVersion((version) => version + 1)
     onUploaded(clipId)
   })
@@ -31,8 +31,8 @@ export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
       <div className="view-head">
         <h2>Footage hochladen</h2>
         <p>
-          Dateien werden blockweise uebertragen. Bricht die Verbindung ab, macht der
-          naechste Versuch an derselben Stelle weiter.
+          Dateien werden blockweise übertragen. Bricht die Verbindung ab, macht der
+          nächste Versuch an derselben Stelle weiter.
           {organizeUploads
             ? ` Neue Dateien werden automatisch nach ${pattern} einsortiert.`
             : ' Neue Dateien landen im Wurzelordner der Bibliothek.'}
@@ -41,18 +41,18 @@ export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
 
       <div className="card-block" style={{ marginBottom: 14 }}>
         <div className="label" style={{ marginBottom: 8 }}>
-          Tags fuer diesen Upload
+          Tags für diesen Upload
         </div>
         <TagPicker
           value={tags}
           onChange={setTags}
           refreshKey={tagsVersion}
-          placeholder="Vorhandenes Tag waehlen oder neues anlegen"
+          placeholder="Vorhandenes Tag wählen oder neues anlegen"
         />
         <p className="note">
-          Bekommen alle Dateien, die du gleich hinzufuegst. Kamera, Aufloesung und
+          Bekommen alle Dateien, die du gleich hinzufügst. Kamera, Auflösung und
           Bildlook vergibt FootageDB ohnehin automatisch, hier geht es um das, was
-          nur du weisst: Ort, Projekt, Motiv.
+          nur du weißt: Ort, Projekt, Motiv.
         </p>
       </div>
 
@@ -71,9 +71,9 @@ export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
       >
         <IconUpload size={30} />
         <h3>Dateien hierher ziehen</h3>
-        <p>oder per Knopf auswaehlen. Mehrere Dateien gleichzeitig sind moeglich.</p>
+        <p>oder per Knopf auswählen. Mehrere Dateien gleichzeitig sind möglich.</p>
         <button className="btn primary" onClick={() => inputRef.current?.click()}>
-          Dateien auswaehlen
+          Dateien auswählen
         </button>
         <input
           ref={inputRef}
@@ -99,7 +99,7 @@ export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
             }}
           >
             <h3 style={{ margin: 0 }}>
-              Uebertragung {active && <span className="spinner" style={{ display: 'inline-block', verticalAlign: -2, marginLeft: 6 }} />}
+              Übertragung {active && <span className="spinner" style={{ display: 'inline-block', verticalAlign: -2, marginLeft: 6 }} />}
             </h3>
             <button className="btn ghost small" onClick={clearFinished}>
               Fertige ausblenden
@@ -150,7 +150,7 @@ export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
                     task.state === 'fehler' ? ' error' : ''
                   }`}
                 >
-                  {task.state === 'laeuft'
+                  {task.state === 'läuft'
                     ? `${percent}%`
                     : task.state === 'fertig'
                       ? formatBytes(task.total)

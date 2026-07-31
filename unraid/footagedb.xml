@@ -10,13 +10,13 @@
   <Support>https://github.com/kchromik/Footage-DB/issues</Support>
   <Project>https://github.com/kchromik/Footage-DB</Project>
   <Overview>
-    Selbstgehostete B-Roll-Bibliothek. Indexiert einen Footage-Ordner, erzeugt Vorschaubilder und im Browser abspielbare Previews und macht den Bestand durchsuchbar: nach Dateiname, Kamera, Aufloesung, Aufnahmedatum, Bildlook oder direkt nach dem, was im Bild zu sehen ist.&#13;
+    Selbstgehostete B-Roll-Bibliothek. Indexiert einen Footage-Ordner, erzeugt Vorschaubilder und im Browser abspielbare Previews und macht den Bestand durchsuchbar: nach Dateiname, Kamera, Auflösung, Aufnahmedatum, Bildlook oder direkt nach dem, was im Bild zu sehen ist.&#13;
 &#13;
-    Beim ersten Aufruf fuehrt ein Assistent durch die Einrichtung und legt dabei auch Benutzer und Passwort an.&#13;
+    Beim ersten Aufruf führt ein Assistent durch die Einrichtung und legt dabei auch Benutzer und Passwort an.&#13;
 &#13;
-    Zwei Pfade sind noetig: der Footage-Ordner (wird gelesen und beschrieben) und ein Datenverzeichnis fuer Datenbank, Vorschaubilder und Previews. Das Datenverzeichnis waechst mit der Bibliothek, rechne grob mit 5 Prozent der Groesse deines Footage-Ordners.&#13;
+    Zwei Pfade sind nötig: der Footage-Ordner (wird gelesen und beschrieben) und ein Datenverzeichnis für Datenbank, Vorschaubilder und Previews. Das Datenverzeichnis wächst mit der Bibliothek, rechne grob mit 5 Prozent der Größe deines Footage-Ordners.&#13;
 &#13;
-    Hardware-Encoding: wenn deine CPU eine Intel-iGPU hat, trag unter Extra Parameters --device=/dev/dri ein. Ohne das laeuft alles ueber die CPU, nur langsamer.
+    Hardware-Encoding: wenn deine CPU eine Intel-iGPU hat, trag unter Extra Parameters --device=/dev/dri ein. Ohne das läuft alles über die CPU, nur langsamer.
   </Overview>
   <Category>MediaApp:Video Productivity:</Category>
   <WebUI>http://[IP]:[PORT:8080]/</WebUI>
@@ -30,7 +30,7 @@
   <DonateLink/>
   <Requires/>
 
-  <Config Name="Weboberflaeche" Target="8080" Default="8080" Mode="tcp"
+  <Config Name="Weboberfläche" Target="8080" Default="8080" Mode="tcp"
           Description="Port, unter dem FootageDB erreichbar ist."
           Type="Port" Display="always" Required="true" Mask="false">8080</Config>
 
@@ -39,11 +39,11 @@
           Type="Path" Display="always" Required="true" Mask="false">/mnt/user/Footage</Config>
 
   <Config Name="Datenverzeichnis" Target="/data" Default="/mnt/user/appdata/footagedb" Mode="rw"
-          Description="Datenbank, Vorschaubilder, Previews und das Suchmodell. Waechst mit der Bibliothek, rund 5 Prozent der Footage-Groesse plus 600 MB fuer das Modell."
+          Description="Datenbank, Vorschaubilder, Previews und das Suchmodell. Wächst mit der Bibliothek, rund 5 Prozent der Footage-Größe plus 600 MB für das Modell."
           Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/footagedb</Config>
 
   <Config Name="FDB_SECRET_KEY" Target="FDB_SECRET_KEY" Default="" Mode=""
-          Description="Zufaelliger Schluessel fuer die Anmelde-Cookies. Erzeugen im Unraid-Terminal mit: openssl rand -hex 32. Bleibt das leer, wirst du nach jedem Neustart des Containers abgemeldet."
+          Description="Zufälliger Schlüssel für die Anmelde-Cookies. Erzeugen im Unraid-Terminal mit: openssl rand -hex 32. Bleibt das leer, wirst du nach jedem Neustart des Containers abgemeldet."
           Type="Variable" Display="always" Required="true" Mask="true"/>
 
   <Config Name="PUID" Target="PUID" Default="99" Mode=""
@@ -59,22 +59,22 @@
           Type="Variable" Display="advanced" Required="false" Mask="false">Europe/Berlin</Config>
 
   <Config Name="FDB_WORKER_COUNT" Target="FDB_WORKER_COUNT" Default="2" Mode=""
-          Description="Wie viele Vorschauen gleichzeitig erzeugt werden. Mehr geht schneller, belastet den Server aber staerker. Laesst sich spaeter in der Oberflaeche aendern."
+          Description="Wie viele Vorschauen gleichzeitig erzeugt werden. Mehr geht schneller, belastet den Server aber stärker. Lässt sich später in der Oberfläche ändern."
           Type="Variable" Display="advanced" Required="false" Mask="false">2</Config>
 
   <Config Name="FDB_SEMANTIC_ENABLED" Target="FDB_SEMANTIC_ENABLED" Default="true" Mode=""
-          Description="Suche nach Bildinhalt. Laedt beim ersten Start einmalig rund 600 MB Modelldaten."
+          Description="Suche nach Bildinhalt. Lädt beim ersten Start einmalig rund 600 MB Modelldaten."
           Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
 
   <Config Name="FDB_AUTH_USER" Target="FDB_AUTH_USER" Default="admin" Mode=""
-          Description="Benutzername. Kann im Einrichtungsassistenten geaendert werden."
+          Description="Benutzername. Kann im Einrichtungsassistenten geändert werden."
           Type="Variable" Display="advanced" Required="false" Mask="false">admin</Config>
 
   <Config Name="FDB_AUTH_PASSWORD" Target="FDB_AUTH_PASSWORD" Default="" Mode=""
-          Description="Optional. Laesst du das leer, fragt der Einrichtungsassistent beim ersten Aufruf nach einem Passwort. Bis dahin ist die Oberflaeche ohne Anmeldung erreichbar, ruf sie also gleich nach dem Start auf."
+          Description="Optional. Lässt du das leer, fragt der Einrichtungsassistent beim ersten Aufruf nach einem Passwort. Bis dahin ist die Oberfläche ohne Anmeldung erreichbar, ruf sie also gleich nach dem Start auf."
           Type="Variable" Display="advanced" Required="false" Mask="true"/>
 
   <Config Name="Intel iGPU" Target="" Default="" Mode=""
-          Description="Nur ausfuellen, wenn deine CPU eine Intel-iGPU hat. Trag dann /dev/dri ein, das beschleunigt die Erzeugung der Previews deutlich. Gibt es das Geraet nicht, laesst du das Feld leer, sonst startet der Container nicht."
+          Description="Nur ausfüllen, wenn deine CPU eine Intel-iGPU hat. Trag dann /dev/dri ein, das beschleunigt die Erzeugung der Previews deutlich. Gibt es das Gerät nicht, lässt du das Feld leer, sonst startet der Container nicht."
           Type="Device" Display="advanced" Required="false" Mask="false"/>
 </Container>

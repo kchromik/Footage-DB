@@ -31,22 +31,22 @@ import {
 } from './components/Icons'
 
 type View = 'library' | 'upload' | 'stats' | 'tools'
-type Phase = 'pruefen' | 'anmelden' | 'wizard' | 'bereit'
+type Phase = 'prüfen' | 'anmelden' | 'wizard' | 'bereit'
 
 const PAGE_SIZE = 60
 
 const SORT_OPTIONS: [string, string][] = [
   ['recorded_desc', 'Aufnahme, neueste zuerst'],
-  ['recorded_asc', 'Aufnahme, aelteste zuerst'],
-  ['added_desc', 'Zuletzt hinzugefuegt'],
-  ['duration_desc', 'Laenge, absteigend'],
-  ['duration_asc', 'Laenge, aufsteigend'],
-  ['size_desc', 'Dateigroesse'],
+  ['recorded_asc', 'Aufnahme, älteste zuerst'],
+  ['added_desc', 'Zuletzt hinzugefügt'],
+  ['duration_desc', 'Länge, absteigend'],
+  ['duration_asc', 'Länge, aufsteigend'],
+  ['size_desc', 'Dateigröße'],
   ['name_asc', 'Dateiname'],
 ]
 
 export default function App() {
-  const [phase, setPhase] = useState<Phase>('pruefen')
+  const [phase, setPhase] = useState<Phase>('prüfen')
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
   const [view, setView] = useState<View>('library')
   const [panelOpen, setPanelOpen] = useState(true)
@@ -78,7 +78,7 @@ export default function App() {
 
   /* ------------------------------------------------------------ Anmeldung */
 
-  /* Zuerst klaeren, ob die Einrichtung schon durch ist. Vor dem Assistenten
+  /* Zuerst klären, ob die Einrichtung schon durch ist. Vor dem Assistenten
      gibt es je nach Konfiguration noch gar kein Passwort. */
   const bootstrap = useCallback(async () => {
     try {
@@ -351,7 +351,7 @@ export default function App() {
 
   const busy = (stats?.queue.running ?? 0) > 0 || stats?.scanning
 
-  if (phase === 'pruefen') {
+  if (phase === 'prüfen') {
     return (
       <div className="login-page">
         <div className="spinner" />
@@ -494,7 +494,7 @@ export default function App() {
               <button
                 className="btn ghost"
                 onClick={() => setDense((value) => !value)}
-                title={dense ? 'Groessere Kacheln' : 'Mehr Kacheln pro Reihe'}
+                title={dense ? 'Größere Kacheln' : 'Mehr Kacheln pro Reihe'}
               >
                 <IconLibrary size={16} />
               </button>
@@ -510,7 +510,7 @@ export default function App() {
             <>
               <div className="result-bar">
                 <span className="result-count">
-                  {loading ? 'laedt' : `${total.toLocaleString('de-DE')} Clips`}
+                  {loading ? 'lädt' : `${total.toLocaleString('de-DE')} Clips`}
                   {mode === 'semantic' && ' nach Bildinhalt'}
                   {mode === 'hybrid' && ' nach Name und Bildinhalt'}
                 </span>
@@ -550,7 +550,7 @@ export default function App() {
                       ? 'Versuch einen anderen Suchbegriff oder schalte oben rechts auf "Inhalt" um, dann wird nach dem gesucht, was im Bild zu sehen ist.'
                       : stats?.clips === 0
                         ? 'Die Bibliothek ist noch leer. Leg Dateien in den Medienordner oder lade sie hier hoch.'
-                        : 'Mit diesen Filtern bleibt nichts uebrig.'}
+                        : 'Mit diesen Filtern bleibt nichts übrig.'}
                   </p>
                 </div>
               ) : (
@@ -614,7 +614,7 @@ export default function App() {
           <button
             className="btn"
             onClick={async () => {
-              const name = window.prompt('Welches Tag soll auf alle ausgewaehlten Clips?')
+              const name = window.prompt('Welches Tag soll auf alle ausgewählten Clips?')
               if (!name?.trim()) return
               await api.batchTags({ clip_ids: selection, add: [name.trim()] })
               notify(`"${name.trim()}" gesetzt`, 'ok')

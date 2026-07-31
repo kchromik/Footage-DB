@@ -1,4 +1,4 @@
-"""Tests fuer Kameraerkennung, Grading-Heuristik und automatische Tags."""
+"""Tests für Kameraerkennung, Grading-Heuristik und automatische Tags."""
 
 from __future__ import annotations
 
@@ -88,7 +88,7 @@ class TestDetectLook:
         assert look == "log"
 
     def test_rushes_ist_kein_log_hinweis(self):
-        # "Rushes" sagt nur Rohmaterial, nichts ueber das Gamma
+        # "Rushes" sagt nur Rohmaterial, nichts über das Gamma
         look, reason, _ = detect_look(probe(bit_depth=8), "Rushes/A001.MP4")
         assert look == "rec709"
 
@@ -149,7 +149,7 @@ class TestDerive:
 
     def test_kein_generisches_look_tag(self):
         # Der Look steckt in einer eigenen Spalte, nur das konkrete
-        # Kameraprofil wird zusaetzlich als Tag gefuehrt
+        # Kameraprofil wird zusätzlich als Tag geführt
         result = derive(probe(bit_depth=10), "a.mp4", "a.mp4")
         assert result.look == "log"
         assert not [name for name, category in result.tags if category == "look"]

@@ -12,8 +12,8 @@ frontend/dist/
 backend/static/
 frontend/tsconfig.tsbuildinfo
 
-# Laufzeitdaten. Fuehrender Schraegstrich, sonst wuerde "media/" auch
-# backend/app/media/ ausschliessen.
+# Laufzeitdaten. Führender Schrägstrich, sonst würde "media/" auch
+# backend/app/media/ ausschließen.
 /data/
 /media/
 /testmedia/

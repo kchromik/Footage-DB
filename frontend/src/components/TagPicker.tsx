@@ -13,7 +13,7 @@ interface Props {
   value: string[]
   onChange: (tags: string[]) => void
   placeholder?: string
-  /** Zaehler hochzaehlen, um die Vorschlaege neu zu laden */
+  /** Zähler hochzählen, um die Vorschläge neu zu laden */
   refreshKey?: number
 }
 
@@ -103,8 +103,8 @@ export function TagPicker({ value, onChange, placeholder, refreshKey = 0 }: Prop
       setHighlight((index) => Math.max(index - 1, 0))
     } else if (event.key === 'Enter') {
       event.preventDefault()
-      const gewaehlt = optionen[highlight]
-      if (gewaehlt) add(gewaehlt.name)
+      const gewählt = optionen[highlight]
+      if (gewählt) add(gewählt.name)
       else if (kannAnlegen) add(trimmed)
     } else if (event.key === 'Escape') {
       setOpen(false)
@@ -158,7 +158,7 @@ export function TagPicker({ value, onChange, placeholder, refreshKey = 0 }: Prop
       {open && optionen.length > 0 && (
         <div className="tag-suggestions">
           {!draft && matches.length > 0 && (
-            <div className="tag-suggestion-head">Haeufig verwendet</div>
+            <div className="tag-suggestion-head">Häufig verwendet</div>
           )}
           {optionen.map((option, index) =>
             option ? (
