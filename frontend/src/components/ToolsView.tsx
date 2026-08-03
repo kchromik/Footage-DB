@@ -95,7 +95,7 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
         <h3>Dateien einsortieren</h3>
         <p style={{ margin: '0 0 12px', color: 'var(--text-dim)', fontSize: 12.5 }}>
           Verschiebt vorhandene Dateien in das Schema{' '}
-          <code className="mono" style={{ color: 'var(--amber)' }}>
+          <code className="mono" style={{ color: 'var(--text)' }}>
             {plan?.pattern ?? '{year}/{year}-{month}/{camera}'}
           </code>
           . Erst planen, danach ausführen. Jeder Durchgang lässt sich rückgängig machen.

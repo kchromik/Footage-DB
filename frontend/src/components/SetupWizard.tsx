@@ -520,7 +520,7 @@ export function SetupWizard({ status, onDone }: Props) {
                       onChange={(event) =>
                         set({ worker_count: Number(event.target.value) })
                       }
-                      style={{ flex: 1, accentColor: 'var(--amber)' }}
+                      style={{ flex: 1, accentColor: 'var(--text)' }}
                     />
                     <span className="mono" style={{ width: 18, textAlign: 'right' }}>
                       {draft.worker_count}

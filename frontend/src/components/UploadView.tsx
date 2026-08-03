@@ -113,7 +113,7 @@ export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
                 <div className="fname" title={task.targetPath ?? task.file.name}>
                   {task.file.name}
                   {task.tags.length > 0 && (
-                    <span style={{ color: 'var(--amber)', fontSize: 11, marginLeft: 8 }}>
+                    <span style={{ color: 'var(--text-dim)', fontSize: 11, marginLeft: 8 }}>
                       {task.tags.join(', ')}
                     </span>
                   )}
@@ -140,7 +140,7 @@ export function UploadView({ organizeUploads, pattern, onUploaded }: Props) {
                         task.state === 'fehler'
                           ? 'var(--danger)'
                           : task.state === 'fertig'
-                            ? 'var(--look-graded)'
+                            ? 'var(--ok)'
                             : undefined,
                     }}
                   />

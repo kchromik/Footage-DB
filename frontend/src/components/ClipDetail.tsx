@@ -315,9 +315,8 @@ export function ClipDetail({
               <IconDownload size={14} /> Herunterladen
             </a>
             <button
-              className="btn"
+              className={`btn icon-only${clip.favorite ? ' fav-on' : ''}`}
               onClick={() => patch({ favorite: !clip.favorite })}
-              style={clip.favorite ? { color: 'var(--amber)', borderColor: 'var(--amber-line)' } : undefined}
               aria-label="Favorit"
             >
               <IconStar size={14} filled={clip.favorite} />

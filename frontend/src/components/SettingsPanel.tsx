@@ -91,7 +91,7 @@ export function SettingsPanel({ notify }: Props) {
                 }
                 onMouseUp={() => save({ worker_count: values.worker_count })}
                 onTouchEnd={() => save({ worker_count: values.worker_count })}
-                style={{ flex: 1, accentColor: 'var(--amber)' }}
+                style={{ flex: 1, accentColor: 'var(--text)' }}
               />
               <span className="mono" style={{ width: 18, textAlign: 'right' }}>
                 {values.worker_count}

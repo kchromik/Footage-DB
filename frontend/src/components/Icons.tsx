@@ -140,6 +140,26 @@ export const IconFilm = ({ size = 34 }: Props) => (
   </svg>
 )
 
+export const IconSun = ({ size = 17 }: Props) => (
+  <svg {...base(size)}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+  </svg>
+)
+
+export const IconMoon = ({ size = 17 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z" />
+  </svg>
+)
+
+export const IconMonitor = ({ size = 17 }: Props) => (
+  <svg {...base(size)}>
+    <rect x="3" y="4" width="18" height="12" rx="2" />
+    <path d="M8 20h8M12 16v4" />
+  </svg>
+)
+
 export const IconLogout = ({ size = 18 }: Props) => (
   <svg {...base(size)}>
     <path d="M14 20H6a2 2 0 01-2-2V6a2 2 0 012-2h8" />

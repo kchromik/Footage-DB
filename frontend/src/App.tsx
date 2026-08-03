@@ -14,6 +14,7 @@ import { StatsView } from './components/StatsView'
 import { ToolsView } from './components/ToolsView'
 import { UploadView } from './components/UploadView'
 import { Toasts, useToasts } from './components/Toasts'
+import { ThemeToggle } from './components/ThemeToggle'
 import {
   IconCheck,
   IconClose,
@@ -401,6 +402,7 @@ export default function App() {
           </button>
         ))}
         <div className="rail-spacer" />
+        <ThemeToggle />
         <button
           className="rail-btn"
           aria-label="Abmelden"
