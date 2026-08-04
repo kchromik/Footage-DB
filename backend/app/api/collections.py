@@ -1,12 +1,17 @@
-"""Sammlungen: Clips für ein bestimmtes Videoprojekt zusammenstellen."""
+"""Sammlungen: Clips für ein bestimmtes Videoprojekt zusammenstellen.
+
+Ein Clip darf in beliebig vielen Sammlungen liegen, die Zuordnung steht in
+einer eigenen Tabelle. Nichts wird kopiert oder verschoben.
+"""
 
 from __future__ import annotations
+
+import sqlite3
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..db import get_conn
-from ..serializers import load_tags, serialize_clip
 from .deps import require_user
 
 router = APIRouter(
@@ -19,14 +24,36 @@ class CollectionIn(BaseModel):
     notes: str | None = None
 
 
+class CollectionPatch(BaseModel):
+    name: str | None = None
+    notes: str | None = None
+
+
+LIST_SQL = """
+    SELECT c.id, c.name, c.notes, c.created_at,
+           COUNT(cc.clip_id) AS count,
+           (SELECT cl.id FROM collection_clips m
+              JOIN clips cl ON cl.id = m.clip_id
+             WHERE m.collection_id = c.id AND cl.poster_status = 'ready'
+             ORDER BY m.position, m.added_at LIMIT 1) AS cover_id
+      FROM collections c
+      LEFT JOIN collection_clips cc ON cc.collection_id = c.id
+"""
+
+
+def _row_to_dict(row: sqlite3.Row) -> dict:
+    data = dict(row)
+    cover = data.pop("cover_id", None)
+    data["cover_url"] = f"/api/media/{cover}/poster" if cover else None
+    return data
+
+
 @router.get("")
 def list_collections() -> dict:
     rows = get_conn().execute(
-        "SELECT c.id, c.name, c.notes, c.created_at, COUNT(cc.clip_id) AS count "
-        "FROM collections c LEFT JOIN collection_clips cc ON cc.collection_id = c.id "
-        "GROUP BY c.id ORDER BY c.created_at DESC"
+        f"{LIST_SQL} GROUP BY c.id ORDER BY c.name COLLATE NOCASE"
     ).fetchall()
-    return {"items": [dict(row) for row in rows]}
+    return {"items": [_row_to_dict(row) for row in rows]}
 
 
 @router.post("")
@@ -40,27 +67,49 @@ def create_collection(payload: CollectionIn) -> dict:
     cursor = conn.execute(
         "INSERT INTO collections(name, notes) VALUES (?, ?)", (name, payload.notes)
     )
-    return {"id": cursor.lastrowid, "name": name, "notes": payload.notes, "count": 0}
+    return _one(int(cursor.lastrowid))
+
+
+def _one(collection_id: int) -> dict:
+    row = get_conn().execute(
+        f"{LIST_SQL} WHERE c.id = ? GROUP BY c.id", (collection_id,)
+    ).fetchone()
+    if row is None or row["id"] is None:
+        raise HTTPException(status_code=404, detail="Sammlung nicht gefunden")
+    return _row_to_dict(row)
 
 
 @router.get("/{collection_id}")
 def get_collection(collection_id: int) -> dict:
+    """Nur die Sammlung selbst.
+
+    Die Clips holt die Oberfläche über die normale Clip-Liste mit
+    `collection=<id>`, damit Suche, Filter und Sortierung auch innerhalb
+    einer Sammlung funktionieren.
+    """
+    return _one(collection_id)
+
+
+@router.patch("/{collection_id}")
+def update_collection(collection_id: int, payload: CollectionPatch) -> dict:
     conn = get_conn()
-    collection = conn.execute(
-        "SELECT * FROM collections WHERE id = ?", (collection_id,)
-    ).fetchone()
-    if collection is None:
-        raise HTTPException(status_code=404, detail="Sammlung nicht gefunden")
-    rows = conn.execute(
-        "SELECT c.* FROM collection_clips cc JOIN clips c ON c.id = cc.clip_id "
-        "WHERE cc.collection_id = ? ORDER BY cc.position, cc.added_at",
-        (collection_id,),
-    ).fetchall()
-    tag_map = load_tags([row["id"] for row in rows])
-    return {
-        **dict(collection),
-        "items": [serialize_clip(row, tag_map.get(row["id"], [])) for row in rows],
-    }
+    _one(collection_id)
+    if payload.name is not None:
+        name = payload.name.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Name fehlt")
+        clash = conn.execute(
+            "SELECT id FROM collections WHERE name = ? AND id != ?", (name, collection_id)
+        ).fetchone()
+        if clash:
+            raise HTTPException(status_code=409, detail="Diese Sammlung gibt es schon")
+        conn.execute("UPDATE collections SET name = ? WHERE id = ?", (name, collection_id))
+    if payload.notes is not None:
+        conn.execute(
+            "UPDATE collections SET notes = ? WHERE id = ?",
+            (payload.notes.strip() or None, collection_id),
+        )
+    return _one(collection_id)
 
 
 class MembersRequest(BaseModel):
@@ -70,14 +119,17 @@ class MembersRequest(BaseModel):
 @router.post("/{collection_id}/clips")
 def add_clips(collection_id: int, payload: MembersRequest) -> dict:
     conn = get_conn()
-    if conn.execute("SELECT id FROM collections WHERE id = ?", (collection_id,)).fetchone() is None:
-        raise HTTPException(status_code=404, detail="Sammlung nicht gefunden")
+    _one(collection_id)
     position = conn.execute(
         "SELECT COALESCE(MAX(position), 0) AS p FROM collection_clips WHERE collection_id = ?",
         (collection_id,),
     ).fetchone()["p"]
     added = 0
     for clip_id in payload.clip_ids:
+        # Unbekannte IDs überspringen, sonst bricht der Fremdschlüssel den
+        # ganzen Stapel ab, nur weil ein Clip zwischenzeitlich weg ist.
+        if conn.execute("SELECT id FROM clips WHERE id = ?", (clip_id,)).fetchone() is None:
+            continue
         position += 1
         cursor = conn.execute(
             "INSERT OR IGNORE INTO collection_clips(collection_id, clip_id, position) "
@@ -85,7 +137,7 @@ def add_clips(collection_id: int, payload: MembersRequest) -> dict:
             (collection_id, clip_id, position),
         )
         added += cursor.rowcount or 0
-    return {"added": added}
+    return {"added": added, "collection": _one(collection_id)}
 
 
 @router.delete("/{collection_id}/clips")

@@ -37,6 +37,7 @@ class ClipFilters:
     duration_max: float | None = None
     favorite: bool | None = None
     look: str = ""
+    collection: int | None = None
     include_missing: bool = False
     only_missing: bool = False
     sort: str = DEFAULT_SORT
@@ -44,6 +45,15 @@ class ClipFilters:
     offset: int = 0
 
     def normalized_sort(self) -> str:
+        # Die Reihenfolge innerhalb einer Sammlung steht nicht am Clip, sondern
+        # an der Zuordnung. Die Sammlungs-ID ist bereits als int geprüft und
+        # wird eingesetzt, damit die Parameterreihenfolge einfach bleibt.
+        if self.sort == "collection_pos" and self.collection:
+            return (
+                f"(SELECT cc.position FROM collection_clips cc "
+                f"WHERE cc.collection_id = {int(self.collection)} "
+                f"AND cc.clip_id = c.id) ASC, c.id ASC"
+            )
         return SORTS.get(self.sort, SORTS[DEFAULT_SORT])
 
 
@@ -124,6 +134,12 @@ def build_where(filters: ClipFilters) -> tuple[str, list[Any]]:
 
     if filters.favorite:
         clauses.append("c.favorite = 1")
+
+    if filters.collection:
+        clauses.append(
+            "c.id IN (SELECT clip_id FROM collection_clips WHERE collection_id = ?)"
+        )
+        params.append(filters.collection)
 
     where = " AND ".join(clauses) if clauses else "1 = 1"
     return where, params

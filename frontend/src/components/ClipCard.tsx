@@ -7,14 +7,25 @@ interface Props {
   clip: Clip
   selected: boolean
   selecting: boolean
+  focused: boolean
   onOpen: (clip: Clip) => void
   onToggle: (clip: Clip, shiftKey: boolean) => void
+  onFocus: (index: number) => void
   index: number
 }
 
 const CARD_ASPECT = 16 / 9
 
-function ClipCardInner({ clip, selected, selecting, onOpen, onToggle, index }: Props) {
+function ClipCardInner({
+  clip,
+  selected,
+  selecting,
+  focused,
+  onOpen,
+  onToggle,
+  onFocus,
+  index,
+}: Props) {
   const [frame, setFrame] = useState(0)
   const [hovering, setHovering] = useState(false)
   const frameRef = useRef<HTMLDivElement>(null)
@@ -55,9 +66,11 @@ function ClipCardInner({ clip, selected, selecting, onOpen, onToggle, index }: P
 
   return (
     <article
-      className={`card${selected ? ' selected' : ''}`}
+      className={`card${selected ? ' selected' : ''}${focused ? ' focused' : ''}`}
+      data-clip-index={index}
       style={{ animationDelay: `${Math.min(index, 24) * 18}ms` }}
       onClick={(event) => {
+        onFocus(index)
         if (event.metaKey || event.ctrlKey || selecting) {
           onToggle(clip, event.shiftKey)
         } else {

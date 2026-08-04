@@ -192,6 +192,23 @@ def search(text: str, limit: int = 300, allowed: set[int] | None = None):
     return index.search(vector, limit=limit, allowed=allowed)
 
 
+def similar(clip_id: int, limit: int = 24) -> list[tuple[int, float]]:
+    """Clips mit ähnlichem Bildinhalt, ausgehend vom Vektor eines Clips.
+
+    Braucht kein Modell im Speicher, der eigene Vektor liegt schon in der
+    Datenbank. Deshalb funktioniert das auch, wenn die inhaltliche Suche
+    später abgeschaltet wurde.
+    """
+    row = get_conn().execute(
+        "SELECT vector FROM embeddings WHERE clip_id = ?", (clip_id,)
+    ).fetchone()
+    if row is None:
+        return []
+    vector = np.frombuffer(row["vector"], dtype=np.float16).astype(np.float32)
+    hits = index.search(vector, limit=limit + 1)
+    return [(cid, score) for cid, score in hits if cid != clip_id][:limit]
+
+
 def status() -> dict:
     return {
         "enabled": runtime.semantic_enabled,

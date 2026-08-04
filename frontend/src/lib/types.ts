@@ -72,6 +72,22 @@ export interface Clip {
   tags: Tag[]
   score?: number
   neighbours?: { previous: number | null; next: number | null }
+  /** Nur in der Detailantwort gesetzt */
+  collections?: { id: number; name: string }[]
+}
+
+export interface Collection {
+  id: number
+  name: string
+  notes: string | null
+  created_at: string
+  count: number
+  cover_url: string | null
+}
+
+export interface SimilarPage {
+  items: Clip[]
+  status: string
 }
 
 export interface FacetEntry {
@@ -133,6 +149,7 @@ export interface Filters {
   duration_max: string
   favorite: boolean
   only_missing: boolean
+  collection: number | null
   sort: string
 }
 
@@ -148,6 +165,7 @@ export const EMPTY_FILTERS: Filters = {
   duration_max: '',
   favorite: false,
   only_missing: false,
+  collection: null,
   sort: 'recorded_desc',
 }
 

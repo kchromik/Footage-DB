@@ -2,10 +2,12 @@ import type {
   AppSettings,
   Clip,
   ClipPage,
+  Collection,
   Filters,
   MediaPreview,
   MoveBatch,
   MovePlan,
+  SimilarPage,
   Stats,
   SetupStatus,
   SystemCheck,
@@ -57,6 +59,7 @@ function buildQuery(filters: Filters, offset: number, limit: number, facets: boo
   if (filters.duration_max) params.set('duration_max', filters.duration_max)
   if (filters.favorite) params.set('favorite', 'true')
   if (filters.only_missing) params.set('only_missing', 'true')
+  if (filters.collection) params.set('collection', String(filters.collection))
   params.set('sort', filters.sort)
   params.set('offset', String(offset))
   params.set('limit', String(limit))
@@ -79,6 +82,8 @@ export const api = {
   clips: (filters: Filters, offset = 0, limit = 60, facets = false) =>
     request<ClipPage>(`/api/clips?${buildQuery(filters, offset, limit, facets)}`),
   clip: (id: number) => request<Clip>(`/api/clips/${id}`),
+  similar: (id: number, limit = 18) =>
+    request<SimilarPage>(`/api/clips/${id}/similar?limit=${limit}`),
   updateClip: (id: number, payload: Record<string, unknown>) =>
     request<Clip>(`/api/clips/${id}`, {
       method: 'PATCH',
@@ -138,6 +143,30 @@ export const api = {
       items: { id: number; name: string; category: string; count: number }[]
       by_category: Record<string, { name: string; count: number }[]>
     }>('/api/tags'),
+
+  collections: () => request<{ items: Collection[] }>('/api/collections'),
+  createCollection: (name: string) =>
+    request<Collection>('/api/collections', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  renameCollection: (id: number, name: string) =>
+    request<Collection>(`/api/collections/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    }),
+  deleteCollection: (id: number) =>
+    request<{ ok: boolean }>(`/api/collections/${id}`, { method: 'DELETE' }),
+  addToCollection: (id: number, clipIds: number[]) =>
+    request<{ added: number; collection: Collection }>(`/api/collections/${id}/clips`, {
+      method: 'POST',
+      body: JSON.stringify({ clip_ids: clipIds }),
+    }),
+  removeFromCollection: (id: number, clipIds: number[]) =>
+    request<{ removed: number }>(`/api/collections/${id}/clips`, {
+      method: 'DELETE',
+      body: JSON.stringify({ clip_ids: clipIds }),
+    }),
 
   initUpload: (filename: string, size: number, subdir = '', tags: string[] = []) =>
     request<{

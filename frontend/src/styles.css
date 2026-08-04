@@ -2061,3 +2061,378 @@ textarea.field {
   color: var(--text-faint);
   white-space: nowrap;
 }
+
+/* --------------------------------------------------------------- Tastatur */
+
+/* Der Cursor beim Sichten. Bewusst anders als die Markierung: gestrichelt,
+   damit beides gleichzeitig lesbar bleibt. */
+.card.focused {
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.card.focused.selected {
+  box-shadow: 0 0 0 1px var(--text), 0 0 0 4px var(--ring);
+}
+
+/* ------------------------------------------------------------- Kontextzeile */
+
+.context-bar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.context-bar strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.context-bar > svg {
+  flex: none;
+  color: var(--text-faint);
+}
+.context-bar > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.context-bar .btn {
+  margin-left: auto;
+  flex: none;
+}
+
+/* ------------------------------------------------------------- Sammlungen */
+
+.collection-new {
+  display: flex;
+  gap: 8px;
+}
+.collection-new .field {
+  flex: 1;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+.collection-card {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease), transform 0.14s var(--ease);
+}
+.collection-card:hover {
+  border-color: var(--text);
+  transform: translateY(-1px);
+}
+.collection-cover {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--media-bg);
+}
+.collection-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.collection-cover .placeholder {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--text-faint);
+}
+.collection-cover .badge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+}
+.collection-body {
+  padding: 11px 12px 13px;
+}
+.collection-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collection-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+.collection-meta .dot {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.collection-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.14s var(--ease);
+}
+.collection-card:hover .collection-actions,
+.collection-card:focus-within .collection-actions {
+  opacity: 1;
+}
+.collection-actions .btn {
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+
+/* ---------------------------------------------------- Auswahl der Sammlung */
+
+.collection-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.collection-picker {
+  position: absolute;
+  left: 0;
+  z-index: 90;
+  width: 268px;
+  padding: 8px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop);
+  animation: fade 0.12s var(--ease);
+}
+.collection-picker.up {
+  bottom: calc(100% + 8px);
+}
+.collection-picker.down {
+  top: calc(100% + 6px);
+}
+.collection-picker-head {
+  padding: 3px 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+.collection-picker .field {
+  width: 100%;
+  margin-bottom: 6px;
+}
+.collection-picker-list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+.collection-picker-empty {
+  padding: 10px 6px;
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+.collection-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-size: 13px;
+  text-align: left;
+}
+.collection-picker-item:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.collection-picker-item.on {
+  color: var(--text);
+}
+.collection-picker-item .name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collection-picker-item .count {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.collection-picker-item svg {
+  flex: none;
+}
+
+/* ------------------------------------------------------------------ Dialog */
+
+.dialog {
+  width: min(560px, 100%);
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop);
+  animation: rise-plain 0.2s var(--ease);
+}
+@keyframes rise-plain {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.dialog-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+}
+.dialog-head p {
+  margin: 5px 0 0;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+.dialog-head .round-btn {
+  flex: none;
+  background: var(--surface-3);
+  color: var(--text-dim);
+}
+.dialog-head .round-btn:hover {
+  background: var(--surface-4);
+  color: var(--text);
+}
+.dialog-body {
+  padding: 18px 20px;
+  overflow-y: auto;
+}
+.dialog-hint {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+}
+
+.tag-pill.add {
+  border-style: dashed;
+  color: var(--text-dim);
+  padding: 0 9px;
+  cursor: pointer;
+}
+.tag-pill.add:hover {
+  border-style: solid;
+  border-color: var(--text);
+  color: var(--text);
+}
+.tag-pill.toggle {
+  padding: 0 5px 0 9px;
+  cursor: pointer;
+}
+.tag-pill.toggle:hover {
+  border-color: var(--line-strong);
+}
+.tag-pill.toggle.danger {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+  text-decoration: line-through;
+}
+.tag-pill .count {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-faint);
+  padding-right: 4px;
+}
+
+/* ------------------------------------------------------- Tastaturübersicht */
+
+.dialog.shortcuts {
+  width: min(600px, 100%);
+}
+.shortcut-groups {
+  display: grid;
+  gap: 22px;
+}
+.shortcut-group .label {
+  margin-bottom: 9px;
+}
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0;
+}
+.shortcut-row .keys {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 168px;
+  flex: none;
+}
+.shortcut-row .keys > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.shortcut-row .oder {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.shortcut-row .what {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .shortcut-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .shortcut-row .keys {
+    width: auto;
+  }
+}

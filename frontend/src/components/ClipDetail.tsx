@@ -8,13 +8,16 @@ import {
   formatDate,
   formatFps,
 } from '../lib/format'
+import { CollectionPicker } from './CollectionPicker'
 import {
   IconArrowLeft,
   IconArrowRight,
   IconClose,
   IconDownload,
   IconFilm,
+  IconPlus,
   IconRefresh,
+  IconSimilar,
   IconStar,
   IconTrash,
 } from './Icons'
@@ -26,6 +29,7 @@ interface Props {
   onNavigate: (direction: -1 | 1) => void
   onDeleted: (id: number) => void
   onTagClick: (tag: string) => void
+  onSimilar: (clip: Clip) => void
   notify: (message: string, kind?: 'ok' | 'error') => void
 }
 
@@ -38,31 +42,57 @@ export function ClipDetail({
   onNavigate,
   onDeleted,
   onTagClick,
+  onSimilar,
   notify,
 }: Props) {
   const [notes, setNotes] = useState(clip.notes ?? '')
   const [tagDraft, setTagDraft] = useState('')
   const [busy, setBusy] = useState(false)
+  const [collectionsOpen, setCollectionsOpen] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     setNotes(clip.notes ?? '')
     setTagDraft('')
+    setCollectionsOpen(false)
   }, [clip.id, clip.notes])
+
+  const reload = async () => {
+    try {
+      onChange(await api.clip(clip.id))
+    } catch {
+      /* der nächste Aufruf holt es nach */
+    }
+  }
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
       const typing =
         event.target instanceof HTMLElement &&
         ['INPUT', 'TEXTAREA'].includes(event.target.tagName)
+      if (event.key === 'Escape') {
+        // Aus einem Eingabefeld erst heraus, dann erst die Ansicht zu
+        if (typing) (event.target as HTMLElement).blur()
+        else onClose()
+        return
+      }
       if (typing) return
-      if (event.key === 'ArrowLeft') onNavigate(-1)
-      if (event.key === 'ArrowRight') onNavigate(1)
+      if (event.key === 'ArrowLeft' || event.key === 'k') onNavigate(-1)
+      if (event.key === 'ArrowRight' || event.key === 'j') onNavigate(1)
+      if (event.key === ' ') {
+        event.preventDefault()
+        const video = videoRef.current
+        if (video) void (video.paused ? video.play() : video.pause())
+      }
+      if (event.key === 'f') void patch({ favorite: !clip.favorite })
+      if (event.key === 's') onSimilar(clip)
+      if (event.key === 'c') setCollectionsOpen(true)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose, onNavigate])
+    // patch hängt nur an clip und onChange, beides steht in der Liste
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clip, onClose, onNavigate, onSimilar])
 
   const patch = async (payload: Record<string, unknown>) => {
     setBusy(true)
@@ -257,6 +287,49 @@ export function ClipDetail({
             <div className="divider" />
 
             <div className="label" style={{ marginBottom: 8 }}>
+              Sammlungen
+            </div>
+            <div className="tag-editor">
+              {(clip.collections ?? []).map((collection) => (
+                <span className="tag-pill" key={collection.id}>
+                  {collection.name}
+                  <button
+                    onClick={async () => {
+                      await api.removeFromCollection(collection.id, [clip.id])
+                      await reload()
+                      notify(`Aus "${collection.name}" entfernt`)
+                    }}
+                    aria-label="Aus der Sammlung nehmen"
+                  >
+                    <IconClose size={10} />
+                  </button>
+                </span>
+              ))}
+              <div className="collection-anchor">
+                <button
+                  className="tag-pill add"
+                  onClick={() => setCollectionsOpen((open) => !open)}
+                >
+                  <IconPlus size={11} /> Sammlung
+                </button>
+                {collectionsOpen && (
+                  <CollectionPicker
+                    clipIds={[clip.id]}
+                    memberOf={(clip.collections ?? []).map((entry) => entry.id)}
+                    drop="down"
+                    onClose={() => setCollectionsOpen(false)}
+                    onChanged={(message) => {
+                      notify(message, 'ok')
+                      void reload()
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="divider" />
+
+            <div className="label" style={{ marginBottom: 8 }}>
               Notiz
             </div>
             <textarea
@@ -286,6 +359,13 @@ export function ClipDetail({
 
             <div className="divider" />
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <button
+                className="btn small"
+                onClick={() => onSimilar(clip)}
+                title="Zeigt Clips mit ähnlichem Bildinhalt (Taste S)"
+              >
+                <IconSimilar size={12} /> Ähnliche Clips
+              </button>
               <button
                 className="btn small"
                 onClick={async () => {

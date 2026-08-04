@@ -160,6 +160,47 @@ export const IconMonitor = ({ size = 17 }: Props) => (
   </svg>
 )
 
+export const IconCollection = ({ size = 18 }: Props) => (
+  <svg {...base(size)}>
+    <rect x="3" y="7" width="13" height="13" rx="2" />
+    <path d="M7 4h11a2 2 0 012 2v10" />
+  </svg>
+)
+
+export const IconPlus = ({ size = 14 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+)
+
+export const IconTag = ({ size = 14 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M11 3H4a1 1 0 00-1 1v7l9.5 9.5a1.5 1.5 0 002.1 0l6.9-6.9a1.5 1.5 0 000-2.1z" />
+    <circle cx="7.5" cy="7.5" r="1.3" />
+  </svg>
+)
+
+export const IconSimilar = ({ size = 15 }: Props) => (
+  <svg {...base(size)}>
+    <circle cx="9" cy="9" r="5.5" />
+    <circle cx="15" cy="15" r="5.5" />
+  </svg>
+)
+
+export const IconKeyboard = ({ size = 17 }: Props) => (
+  <svg {...base(size)}>
+    <rect x="2.5" y="6" width="19" height="12" rx="2" />
+    <path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M8 14h8" />
+  </svg>
+)
+
+export const IconEdit = ({ size = 13 }: Props) => (
+  <svg {...base(size)}>
+    <path d="M4 20h4l10-10-4-4L4 16z" />
+    <path d="M13.5 6.5l4 4" />
+  </svg>
+)
+
 export const IconLogout = ({ size = 18 }: Props) => (
   <svg {...base(size)}>
     <path d="M14 20H6a2 2 0 01-2-2V6a2 2 0 012-2h8" />

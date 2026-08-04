@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, ApiError } from './lib/api'
 import { EMPTY_FILTERS } from './lib/types'
-import type { Clip, Facets, Filters, SetupStatus, Stats } from './lib/types'
+import type { Clip, Collection, Facets, Filters, SetupStatus, Stats } from './lib/types'
 import { useEvents } from './lib/useEvents'
 import { LOOK_LABEL } from './lib/format'
 import type { Look } from './lib/types'
+import { BatchTagDialog } from './components/BatchTagDialog'
 import { ClipCard } from './components/ClipCard'
 import { ClipDetail } from './components/ClipDetail'
+import { CollectionPicker } from './components/CollectionPicker'
+import { CollectionsView } from './components/CollectionsView'
 import { FilterPanel } from './components/FilterPanel'
 import { Login } from './components/Login'
 import { SetupWizard } from './components/SetupWizard'
+import { ShortcutsHelp } from './components/ShortcutsHelp'
 import { StatsView } from './components/StatsView'
 import { ToolsView } from './components/ToolsView'
 import { UploadView } from './components/UploadView'
@@ -18,23 +22,28 @@ import { ThemeToggle } from './components/ThemeToggle'
 import {
   IconCheck,
   IconClose,
+  IconCollection,
   IconDownload,
   IconFilm,
   IconFilter,
+  IconKeyboard,
   IconLibrary,
   IconLogo,
   IconLogout,
   IconSearch,
+  IconSimilar,
   IconStar,
   IconStats,
+  IconTag,
   IconTools,
   IconUpload,
 } from './components/Icons'
 
-type View = 'library' | 'upload' | 'stats' | 'tools'
+type View = 'library' | 'collections' | 'upload' | 'stats' | 'tools'
 type Phase = 'prüfen' | 'anmelden' | 'wizard' | 'bereit'
 
 const PAGE_SIZE = 60
+const SIMILAR_SIZE = 60
 
 const SORT_OPTIONS: [string, string][] = [
   ['recorded_desc', 'Aufnahme, neueste zuerst'],
@@ -68,11 +77,23 @@ export default function App() {
   const [freshCount, setFreshCount] = useState(0)
 
   const [selection, setSelection] = useState<number[]>([])
+  const [cursor, setCursor] = useState(-1)
   const [detail, setDetail] = useState<Clip | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
 
+  /* Ähnlichkeitssuche: ersetzt vorübergehend die normale Trefferliste */
+  const [similarTo, setSimilarTo] = useState<Clip | null>(null)
+  const [similarStatus, setSimilarStatus] = useState('')
+
+  const [activeCollection, setActiveCollection] = useState<Collection | null>(null)
+  const [collectionsKey, setCollectionsKey] = useState(0)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [tagDialogOpen, setTagDialogOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
+
   const { toasts, notify } = useToasts()
   const searchRef = useRef<HTMLInputElement>(null)
+  const gridRef = useRef<HTMLDivElement>(null)
   const lastToggled = useRef<number | null>(null)
   const sentinel = useRef<HTMLDivElement>(null)
   const pendingRefresh = useRef<Set<number>>(new Set())
@@ -117,6 +138,11 @@ export default function App() {
     window.history.replaceState(null, '', search ? `?${search}` : window.location.pathname)
   }, [filters.q])
 
+  /* Der Name der Sammlung hängt am Filter, nicht umgekehrt */
+  useEffect(() => {
+    if (!filters.collection) setActiveCollection(null)
+  }, [filters.collection])
+
   /* -------------------------------------------------------------- Laden */
 
   const loadPage = useCallback(
@@ -129,7 +155,10 @@ export default function App() {
         setMode(page.mode)
         if (page.facets) setFacets(page.facets)
         setItems((current) => (replace ? page.items : [...current, ...page.items]))
-        if (replace) setFreshCount(0)
+        if (replace) {
+          setFreshCount(0)
+          setCursor(-1)
+        }
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
           setPhase('anmelden')
@@ -144,10 +173,34 @@ export default function App() {
     [filters, notify],
   )
 
+  const loadSimilar = useCallback(
+    async (clip: Clip) => {
+      setLoading(true)
+      try {
+        const page = await api.similar(clip.id, SIMILAR_SIZE)
+        setItems(page.items)
+        setTotal(page.items.length)
+        setMode('similar')
+        setSimilarStatus(page.status)
+        setSelection([])
+        setCursor(page.items.length > 0 ? 0 : -1)
+      } catch (error) {
+        notify(`Ähnliche Clips: ${(error as Error).message}`, 'error')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [notify],
+  )
+
   useEffect(() => {
     if (phase !== 'bereit') return
+    if (similarTo) {
+      void loadSimilar(similarTo)
+      return
+    }
     void loadPage(0, true)
-  }, [phase, loadPage])
+  }, [phase, similarTo, loadSimilar, loadPage])
 
   const refreshStats = useCallback(() => {
     api
@@ -163,10 +216,10 @@ export default function App() {
     return () => window.clearInterval(timer)
   }, [phase, refreshStats])
 
-  /* Unendliches Nachladen beim Scrollen */
+  /* Unendliches Nachladen beim Scrollen, aber nicht in der Ähnlichkeitssuche */
   useEffect(() => {
     const node = sentinel.current
-    if (!node || view !== 'library') return
+    if (!node || view !== 'library' || similarTo) return
     const observer = new IntersectionObserver(
       (entries) => {
         if (
@@ -182,7 +235,7 @@ export default function App() {
     )
     observer.observe(node)
     return () => observer.disconnect()
-  }, [items.length, total, loading, loadingMore, loadPage, view])
+  }, [items.length, total, loading, loadingMore, loadPage, view, similarTo])
 
   /* ---------------------------------------------------------- Ereignisse */
 
@@ -261,47 +314,26 @@ export default function App() {
     [items],
   )
 
-  /* -------------------------------------------------------- Tastatur */
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      const typing =
-        event.target instanceof HTMLElement &&
-        ['INPUT', 'TEXTAREA'].includes(event.target.tagName)
-      if (event.key === '/' && !typing) {
-        event.preventDefault()
-        setView('library')
-        searchRef.current?.focus()
-      }
-      if (event.key === 'Escape' && !detail) {
-        if (selection.length > 0) setSelection([])
-        else if (typing) (event.target as HTMLElement).blur()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [detail, selection.length])
-
   /* -------------------------------------------------------------- Detail */
 
-  const openDetail = useCallback(
-    async (clip: Clip) => {
-      setDetail(clip)
-      try {
-        setDetail(await api.clip(clip.id))
-      } catch {
-        /* Kurzfassung reicht auch */
-      }
-    },
-    [],
-  )
+  const openDetail = useCallback(async (clip: Clip) => {
+    setDetail(clip)
+    try {
+      setDetail(await api.clip(clip.id))
+    } catch {
+      /* Kurzfassung reicht auch */
+    }
+  }, [])
 
   const navigateDetail = useCallback(
     (direction: -1 | 1) => {
       if (!detail) return
       const index = items.findIndex((clip) => clip.id === detail.id)
       const next = items[index + direction]
-      if (next) void openDetail(next)
+      if (next) {
+        setCursor(index + direction)
+        void openDetail(next)
+      }
     },
     [detail, items, openDetail],
   )
@@ -311,12 +343,245 @@ export default function App() {
     setDetail((current) => (current && current.id === clip.id ? clip : current))
   }, [])
 
+  const refreshClips = useCallback(
+    async (ids: number[]) => {
+      // Bei kleinen Stapeln reicht es, die betroffenen Clips nachzuladen,
+      // sonst springt die Ansicht durch ein komplettes Neuladen.
+      if (ids.length > 24) {
+        if (similarTo) void loadSimilar(similarTo)
+        else void loadPage(0, true)
+        return
+      }
+      const fresh = await Promise.all(ids.map((id) => api.clip(id).catch(() => null)))
+      setItems((current) =>
+        current.map((clip) => fresh.find((entry) => entry?.id === clip.id) ?? clip),
+      )
+    },
+    [loadPage, loadSimilar, similarTo],
+  )
+
   /* ------------------------------------------------------------ Ableitung */
 
   const changeFilters = useCallback((patch: Partial<Filters>) => {
-    setFilters((current) => ({ ...current, ...patch }))
+    setSimilarTo(null)
+    setFilters((current) => {
+      const next = { ...current, ...patch }
+      // Die Sortierung nach Sammlungsreihenfolge gibt es außerhalb einer
+      // Sammlung nicht, sonst stünde im Auswahlfeld nichts Passendes
+      if (!next.collection && next.sort === 'collection_pos') {
+        next.sort = EMPTY_FILTERS.sort
+      }
+      return next
+    })
     setSelection([])
   }, [])
+
+  const openCollection = useCallback((collection: Collection) => {
+    setSimilarTo(null)
+    setActiveCollection(collection)
+    setSelection([])
+    setFilters({ ...EMPTY_FILTERS, collection: collection.id, sort: 'collection_pos' })
+    setSearchDraft('')
+    setView('library')
+  }, [])
+
+  const showSimilar = useCallback((clip: Clip) => {
+    setDetail(null)
+    setView('library')
+    setSimilarTo(clip)
+  }, [])
+
+  /* Ziel der Stapelaktionen: die Markierung, sonst der Clip unter dem Cursor */
+  const targetIds = useMemo(() => {
+    if (selection.length > 0) return selection
+    return cursor >= 0 && items[cursor] ? [items[cursor].id] : []
+  }, [selection, cursor, items])
+
+  const targetClips = useMemo(
+    () => items.filter((clip) => targetIds.includes(clip.id)),
+    [items, targetIds],
+  )
+
+  const applyBatchTags = useCallback(
+    async (add: string[], remove: string[]) => {
+      try {
+        await api.batchTags({ clip_ids: targetIds, add, remove })
+        setTagDialogOpen(false)
+        const teile = [
+          add.length > 0 ? `${add.length} vergeben` : '',
+          remove.length > 0 ? `${remove.length} entfernt` : '',
+        ].filter(Boolean)
+        notify(`Tags: ${teile.join(', ')}`, 'ok')
+        await refreshClips(targetIds)
+      } catch (error) {
+        notify(`Tags konnten nicht gesetzt werden: ${(error as Error).message}`, 'error')
+      }
+    },
+    [targetIds, notify, refreshClips],
+  )
+
+  const toggleFavorite = useCallback(
+    async (clip: Clip) => {
+      try {
+        patchClipInList(await api.updateClip(clip.id, { favorite: !clip.favorite }))
+      } catch (error) {
+        notify((error as Error).message, 'error')
+      }
+    },
+    [patchClipInList, notify],
+  )
+
+  /* -------------------------------------------------------- Tastatur */
+
+  const columnCount = useCallback(() => {
+    const cards = Array.from(gridRef.current?.children ?? []) as HTMLElement[]
+    if (cards.length === 0) return 1
+    // Wie viele Kacheln teilen sich die oberste Reihe? Das Raster ist
+    // fließend, deshalb wird die Spaltenzahl aus dem Layout abgelesen.
+    const top = cards[0].offsetTop
+    let columns = 0
+    for (const card of cards) {
+      if (card.offsetTop !== top) break
+      columns += 1
+    }
+    return Math.max(1, columns)
+  }, [])
+
+  const moveCursor = useCallback(
+    (delta: number) => {
+      setCursor((current) => {
+        if (items.length === 0) return -1
+        if (current < 0) return 0
+        return Math.min(items.length - 1, Math.max(0, current + delta))
+      })
+    },
+    [items.length],
+  )
+
+  /* Nur bei einer Cursorbewegung nachführen. Hinge das auch an der Anzahl
+     der Clips, würde jedes Nachladen beim Scrollen zurück zum Cursor
+     springen. */
+  useEffect(() => {
+    if (cursor < 0) return
+    const node = gridRef.current?.querySelector(`[data-clip-index="${cursor}"]`)
+    node?.scrollIntoView({ block: 'nearest' })
+  }, [cursor])
+
+  /* Ohne Markierung gibt es keinen Auswahlbalken, der die Sammlungsauswahl
+     tragen könnte */
+  useEffect(() => {
+    if (selection.length === 0) setPickerOpen(false)
+  }, [selection.length])
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target
+      const typing =
+        target instanceof HTMLElement &&
+        (['INPUT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable)
+
+      if (event.key === '?' && !typing) {
+        event.preventDefault()
+        setHelpOpen((open) => !open)
+        return
+      }
+      if (event.key === '/' && !typing) {
+        event.preventDefault()
+        setView('library')
+        searchRef.current?.focus()
+        return
+      }
+      if (typing) {
+        if (event.key === 'Escape') (target as HTMLElement).blur()
+        return
+      }
+      // Detailansicht, Dialoge und Modifikatoren haben Vorrang
+      if (detail || tagDialogOpen || helpOpen || pickerOpen) return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      if (view !== 'library') return
+
+      // Auf einem fokussierten Knopf lösen Leertaste und Enter den Knopf aus,
+      // das darf nicht zusätzlich den Clip unter dem Cursor treffen
+      const aufKnopf =
+        target instanceof HTMLElement && ['BUTTON', 'A', 'SELECT'].includes(target.tagName)
+      if (aufKnopf && [' ', 'Enter'].includes(event.key)) return
+
+      const current = cursor >= 0 ? items[cursor] : undefined
+
+      switch (event.key) {
+        case 'j':
+        case 'ArrowRight':
+          event.preventDefault()
+          moveCursor(1)
+          break
+        case 'k':
+        case 'ArrowLeft':
+          event.preventDefault()
+          moveCursor(-1)
+          break
+        case 'ArrowDown':
+          event.preventDefault()
+          moveCursor(columnCount())
+          break
+        case 'ArrowUp':
+          event.preventDefault()
+          moveCursor(-columnCount())
+          break
+        case 'Enter':
+          if (current) void openDetail(current)
+          break
+        case ' ':
+        case 'x':
+          event.preventDefault()
+          if (current) toggleSelection(current, event.shiftKey)
+          break
+        case 'a':
+          event.preventDefault()
+          setSelection(items.map((clip) => clip.id))
+          break
+        case 'f':
+          if (current) void toggleFavorite(current)
+          break
+        case 't':
+          if (targetIds.length > 0) setTagDialogOpen(true)
+          break
+        case 'c':
+          // Der Auswahlbalken trägt den Sammlungs-Knopf, also erst markieren
+          if (selection.length === 0 && current) setSelection([current.id])
+          if (targetIds.length > 0) setPickerOpen(true)
+          break
+        case 's':
+          if (current) showSimilar(current)
+          break
+        case 'Escape':
+          if (selection.length > 0) setSelection([])
+          else if (similarTo) setSimilarTo(null)
+          else setCursor(-1)
+          break
+        default:
+          break
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [
+    columnCount,
+    cursor,
+    detail,
+    helpOpen,
+    items,
+    moveCursor,
+    openDetail,
+    pickerOpen,
+    selection,
+    showSimilar,
+    similarTo,
+    tagDialogOpen,
+    targetIds,
+    toggleFavorite,
+    toggleSelection,
+    view,
+  ])
 
   const activeFilterChips = useMemo(() => {
     const chips: { label: string; clear: () => void }[] = []
@@ -349,6 +614,17 @@ export default function App() {
       })
     return chips
   }, [filters, changeFilters])
+
+  const sortOptions = useMemo(
+    () =>
+      filters.collection
+        ? ([['collection_pos', 'Reihenfolge in der Sammlung'], ...SORT_OPTIONS] as [
+            string,
+            string,
+          ][])
+        : SORT_OPTIONS,
+    [filters.collection],
+  )
 
   const busy = (stats?.queue.running ?? 0) > 0 || stats?.scanning
 
@@ -386,6 +662,7 @@ export default function App() {
         {(
           [
             ['library', 'Bibliothek', <IconLibrary key="l" />],
+            ['collections', 'Sammlungen', <IconCollection key="c" />],
             ['upload', 'Hochladen', <IconUpload key="u" />],
             ['stats', 'Bibliothek in Zahlen', <IconStats key="s" />],
             ['tools', 'Werkzeuge', <IconTools key="t" />],
@@ -402,6 +679,14 @@ export default function App() {
           </button>
         ))}
         <div className="rail-spacer" />
+        <button
+          className="rail-btn"
+          aria-label="Tastaturkürzel"
+          onClick={() => setHelpOpen(true)}
+        >
+          <IconKeyboard size={17} />
+          <span className="tip">Tastatur</span>
+        </button>
         <ThemeToggle />
         <button
           className="rail-btn"
@@ -424,6 +709,7 @@ export default function App() {
           onChange={changeFilters}
           onReset={() => {
             setSearchDraft('')
+            setSimilarTo(null)
             setFilters({ ...EMPTY_FILTERS, sort: filters.sort })
           }}
         />
@@ -451,6 +737,7 @@ export default function App() {
               placeholder="Suchen: Dateiname, Kamera oder Bildinhalt"
               onChange={(event) => {
                 setSearchDraft(event.target.value)
+                setSimilarTo(null)
                 if (view !== 'library') setView('library')
               }}
             />
@@ -487,7 +774,7 @@ export default function App() {
                 value={filters.sort}
                 onChange={(event) => changeFilters({ sort: event.target.value })}
               >
-                {SORT_OPTIONS.map(([value, label]) => (
+                {sortOptions.map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
@@ -510,11 +797,39 @@ export default function App() {
         <div className="content">
           {view === 'library' && (
             <>
+              {similarTo && (
+                <div className="context-bar">
+                  <IconSimilar size={14} />
+                  <span>
+                    Ähnlich zu <strong>{similarTo.filename}</strong>
+                  </span>
+                  <button className="btn ghost small" onClick={() => setSimilarTo(null)}>
+                    <IconClose size={11} /> Zurück zur Bibliothek
+                  </button>
+                </div>
+              )}
+
+              {!similarTo && activeCollection && (
+                <div className="context-bar">
+                  <IconCollection size={14} />
+                  <span>
+                    Sammlung <strong>{activeCollection.name}</strong>
+                  </span>
+                  <button
+                    className="btn ghost small"
+                    onClick={() => changeFilters({ collection: null })}
+                  >
+                    <IconClose size={11} /> Sammlung verlassen
+                  </button>
+                </div>
+              )}
+
               <div className="result-bar">
                 <span className="result-count">
                   {loading ? 'lädt' : `${total.toLocaleString('de-DE')} Clips`}
                   {mode === 'semantic' && ' nach Bildinhalt'}
                   {mode === 'hybrid' && ' nach Name und Bildinhalt'}
+                  {mode === 'similar' && ' mit ähnlichem Bildinhalt'}
                 </span>
                 <div className="active-filters">
                   {activeFilterChips.map((chip) => (
@@ -526,7 +841,7 @@ export default function App() {
                     </span>
                   ))}
                 </div>
-                {freshCount > 0 && (
+                {freshCount > 0 && !similarTo && (
                   <button className="btn small" onClick={() => void loadPage(0, true)}>
                     {freshCount} neue Clips laden
                   </button>
@@ -548,16 +863,22 @@ export default function App() {
                   <IconFilm size={44} />
                   <h3>Nichts gefunden</h3>
                   <p>
-                    {filters.q
-                      ? 'Versuch einen anderen Suchbegriff oder schalte oben rechts auf "Inhalt" um, dann wird nach dem gesucht, was im Bild zu sehen ist.'
-                      : stats?.clips === 0
-                        ? 'Die Bibliothek ist noch leer. Leg Dateien in den Medienordner oder lade sie hier hoch.'
-                        : 'Mit diesen Filtern bleibt nichts übrig.'}
+                    {similarTo
+                      ? similarStatus === 'ready'
+                        ? 'Zu diesem Clip passt inhaltlich nichts anderes in der Bibliothek.'
+                        : 'Für diesen Clip wurde noch keine Bildanalyse gerechnet. Sobald die inhaltliche Suche durch ist, funktioniert das hier.'
+                      : filters.collection
+                        ? 'Diese Sammlung ist noch leer. Markier in der Bibliothek Clips und leg sie über die Auswahlleiste hinein.'
+                        : filters.q
+                          ? 'Versuch einen anderen Suchbegriff oder schalte oben rechts auf "Inhalt" um, dann wird nach dem gesucht, was im Bild zu sehen ist.'
+                          : stats?.clips === 0
+                            ? 'Die Bibliothek ist noch leer. Leg Dateien in den Medienordner oder lade sie hier hoch.'
+                            : 'Mit diesen Filtern bleibt nichts übrig.'}
                   </p>
                 </div>
               ) : (
                 <>
-                  <div className={`grid${dense ? ' dense' : ''}`}>
+                  <div className={`grid${dense ? ' dense' : ''}`} ref={gridRef}>
                     {items.map((clip, index) => (
                       <ClipCard
                         key={clip.id}
@@ -565,8 +886,10 @@ export default function App() {
                         index={index}
                         selected={selection.includes(clip.id)}
                         selecting={selection.length > 0}
+                        focused={cursor === index}
                         onOpen={openDetail}
                         onToggle={toggleSelection}
+                        onFocus={setCursor}
                       />
                     ))}
                   </div>
@@ -579,6 +902,14 @@ export default function App() {
                 </>
               )}
             </>
+          )}
+
+          {view === 'collections' && (
+            <CollectionsView
+              notify={notify}
+              onOpen={openCollection}
+              refreshKey={collectionsKey}
+            />
           )}
 
           {view === 'upload' && (
@@ -613,28 +944,53 @@ export default function App() {
           <a className="btn" href={api.zipUrl(selection)}>
             <IconDownload size={13} /> Als ZIP laden
           </a>
-          <button
-            className="btn"
-            onClick={async () => {
-              const name = window.prompt('Welches Tag soll auf alle ausgewählten Clips?')
-              if (!name?.trim()) return
-              await api.batchTags({ clip_ids: selection, add: [name.trim()] })
-              notify(`"${name.trim()}" gesetzt`, 'ok')
-              void loadPage(0, true)
-            }}
-          >
-            Tag setzen
+
+          <div className="collection-anchor">
+            <button className="btn" onClick={() => setPickerOpen((open) => !open)}>
+              <IconCollection size={13} /> Sammlung
+            </button>
+            {pickerOpen && (
+              <CollectionPicker
+                clipIds={selection}
+                onClose={() => setPickerOpen(false)}
+                onChanged={(message) => {
+                  notify(message, 'ok')
+                  setCollectionsKey((key) => key + 1)
+                  if (filters.collection) void loadPage(0, true)
+                }}
+              />
+            )}
+          </div>
+
+          <button className="btn" onClick={() => setTagDialogOpen(true)}>
+            <IconTag size={13} /> Tags
           </button>
           <button
             className="btn"
             onClick={async () => {
               await api.batchTags({ clip_ids: selection, favorite: true })
               notify('Als Favoriten markiert', 'ok')
-              void loadPage(0, true)
+              await refreshClips(selection)
             }}
           >
             <IconStar size={13} /> Favorit
           </button>
+
+          {activeCollection && (
+            <button
+              className="btn"
+              onClick={async () => {
+                const result = await api.removeFromCollection(activeCollection.id, selection)
+                notify(`${result.removed} aus "${activeCollection.name}" entfernt`, 'ok')
+                setSelection([])
+                setCollectionsKey((key) => key + 1)
+                void loadPage(0, true)
+              }}
+            >
+              <IconClose size={12} /> Aus Sammlung
+            </button>
+          )}
+
           <div className="sep" />
           <button
             className="btn ghost"
@@ -648,12 +1004,23 @@ export default function App() {
         </div>
       )}
 
+      {tagDialogOpen && targetClips.length > 0 && (
+        <BatchTagDialog
+          clips={targetClips}
+          onClose={() => setTagDialogOpen(false)}
+          onApply={applyBatchTags}
+        />
+      )}
+
+      {helpOpen && <ShortcutsHelp onClose={() => setHelpOpen(false)} />}
+
       {detail && (
         <ClipDetail
           clip={detail}
           onClose={() => setDetail(null)}
           onChange={patchClipInList}
           onNavigate={navigateDetail}
+          onSimilar={showSimilar}
           onDeleted={(id) => {
             setItems((current) => current.filter((clip) => clip.id !== id))
             setDetail(null)

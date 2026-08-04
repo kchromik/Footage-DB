@@ -23,6 +23,10 @@ router = APIRouter(prefix="/api/clips", tags=["clips"], dependencies=[Depends(re
 SEMANTIC_THRESHOLD = 0.19
 SEMANTIC_POOL = 400
 
+# Bild gegen Bild liegt deutlich höher als Text gegen Bild, deshalb ein
+# eigener, strengerer Schwellwert für die Suche nach ähnlichen Clips.
+SIMILAR_THRESHOLD = 0.5
+
 
 def _filters(
     q_text: str,
@@ -35,6 +39,7 @@ def _filters(
     duration_min: float | None,
     duration_max: float | None,
     favorite: bool,
+    collection: int | None,
     only_missing: bool,
     include_missing: bool,
     sort: str,
@@ -52,6 +57,7 @@ def _filters(
         duration_min=duration_min,
         duration_max=duration_max,
         favorite=favorite or None,
+        collection=collection,
         only_missing=only_missing,
         include_missing=include_missing,
         sort=sort,
@@ -72,6 +78,7 @@ def list_clips(
     duration_min: float | None = None,
     duration_max: float | None = None,
     favorite: bool = False,
+    collection: int | None = None,
     only_missing: bool = False,
     include_missing: bool = False,
     sort: str = q.DEFAULT_SORT,
@@ -81,8 +88,8 @@ def list_clips(
 ) -> dict:
     filters = _filters(
         q_text, mode, tags, folder, look, date_from, date_to,
-        duration_min, duration_max, favorite, only_missing, include_missing,
-        sort, limit, offset,
+        duration_min, duration_max, favorite, collection, only_missing,
+        include_missing, sort, limit, offset,
     )
     where, params = q.build_where(filters)
     conn = get_conn()
@@ -166,12 +173,58 @@ def list_clips(
 
 @router.get("/{clip_id}")
 def get_clip(clip_id: int) -> dict:
-    row = get_conn().execute("SELECT * FROM clips WHERE id = ?", (clip_id,)).fetchone()
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM clips WHERE id = ?", (clip_id,)).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Clip nicht gefunden")
     data = serialize_clip(row, load_tags([clip_id]).get(clip_id, []))
     data["neighbours"] = _neighbours(clip_id)
+    data["collections"] = [
+        {"id": entry["id"], "name": entry["name"]}
+        for entry in conn.execute(
+            "SELECT c.id, c.name FROM collection_clips cc "
+            "JOIN collections c ON c.id = cc.collection_id "
+            "WHERE cc.clip_id = ? ORDER BY c.name COLLATE NOCASE",
+            (clip_id,),
+        )
+    ]
     return data
+
+
+@router.get("/{clip_id}/similar")
+def similar_clips(clip_id: int, limit: int = Query(24, ge=1, le=60)) -> dict:
+    """Clips, die inhaltlich zum übergebenen Clip passen."""
+    conn = get_conn()
+    if conn.execute("SELECT id FROM clips WHERE id = ?", (clip_id,)).fetchone() is None:
+        raise HTTPException(status_code=404, detail="Clip nicht gefunden")
+
+    row = conn.execute(
+        "SELECT embed_status FROM clips WHERE id = ?", (clip_id,)
+    ).fetchone()
+    hits = [
+        (cid, score)
+        for cid, score in semantic.similar(clip_id, limit=limit)
+        if score >= SIMILAR_THRESHOLD
+    ]
+    if not hits:
+        return {"items": [], "status": row["embed_status"]}
+
+    ids = [cid for cid, _ in hits]
+    scores = dict(hits)
+    placeholders = ",".join("?" * len(ids))
+    rows = conn.execute(
+        f"SELECT * FROM clips WHERE id IN ({placeholders}) AND status != 'missing'",
+        ids,
+    ).fetchall()
+    rows.sort(key=lambda entry: -scores[entry["id"]])
+    tag_map = load_tags([entry["id"] for entry in rows])
+    return {
+        "items": [
+            serialize_clip(entry, tag_map.get(entry["id"], []), scores[entry["id"]])
+            for entry in rows
+        ],
+        "status": row["embed_status"],
+    }
 
 
 def _neighbours(clip_id: int) -> dict:
