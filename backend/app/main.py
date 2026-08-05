@@ -101,6 +101,18 @@ async def lifespan(app: FastAPI):
     if cleaned:
         log.info("%d abgebrochene Uploads aufgeräumt", cleaned)
 
+    # Die wirksame Worker-Zahl sichtbar machen. Sie kommt bevorzugt aus der
+    # Einstellungstabelle und überstimmt dann FDB_WORKER_COUNT. Das ist so
+    # gewollt, war aber schon Ursache einer Fehlsuche: In der Compose-Datei
+    # stand 2, tatsächlich liefen 4, und niemand konnte das der Datei ansehen.
+    from .media.ffmpeg import thread_limit
+
+    log.info(
+        "Worker: %d (Quelle: %s), ffmpeg-Threads je Prozess: %d",
+        runtime.worker_count,
+        "Einstellungstabelle" if runtime.get("worker_count") else "Umgebung/Vorgabe",
+        thread_limit(),
+    )
     jobs.start_pool(runtime.worker_count)
     threading.Thread(target=_preload_semantic, name="semantic-preload", daemon=True).start()
 

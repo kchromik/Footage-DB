@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import functools
 import logging
+import os
 import subprocess
 from pathlib import Path
 
@@ -13,6 +14,24 @@ from ..settings_store import runtime
 log = logging.getLogger(__name__)
 
 VAAPI_DEVICE = Path("/dev/dri/renderD128")
+
+
+def thread_limit() -> int:
+    """Threads pro ffmpeg-Prozess, abgeleitet aus Kernen und Worker-Zahl.
+
+    Warum das nötig ist: Ohne Begrenzung nimmt sich libx264 alle Kerne und
+    legt pro Thread eigene Frame-Puffer an. Bei mehreren Workern parallel
+    vervielfacht sich beides. Auf einer 8-Kern-NAS mit 7,4 GB RAM liefen so
+    vier Prozesse mit je acht Threads, ein einzelner belegte bei 6K-Material
+    1,9 GB. Das Ergebnis war Swap-Thrashing und eine Load von 101, die
+    sämtliche anderen Dienste auf dem Gerät unerreichbar gemacht hat.
+
+    Die Obergrenze hält die Summe aller Encoder-Threads bei etwa der Zahl
+    der Kerne, unabhängig davon, wie viele Worker eingestellt sind.
+    """
+    cores = os.cpu_count() or 4
+    workers = max(1, runtime.worker_count)
+    return max(1, cores // workers)
 
 
 class FFmpegError(RuntimeError):
@@ -42,6 +61,11 @@ def base_command(*, quiet: bool = True) -> list[str]:
     cmd = [settings.ffmpeg_path, "-hide_banner", "-nostdin", "-y"]
     if quiet:
         cmd += ["-loglevel", "error"]
+    # Vor dem -i begrenzt -threads den Dekoder, -filter_threads den
+    # Filtergraphen. Die Encoder-Seite braucht die Option als Ausgabeoption
+    # und wird deshalb in preview.py separat gesetzt.
+    threads = str(thread_limit())
+    cmd += ["-threads", threads, "-filter_threads", threads]
     return cmd
 
 

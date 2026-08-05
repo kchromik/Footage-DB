@@ -3,10 +3,31 @@
 from __future__ import annotations
 
 import functools
+import os
 from pathlib import Path
 
 from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+def default_worker_count() -> int:
+    """Voreinstellung für die Worker-Zahl, aus Kernen und Arbeitsspeicher.
+
+    Ein fester Wert ist hier gefährlich: Jeder Worker kann einen
+    ffmpeg-Prozess starten, und der belegt bei hochauflösendem Material
+    mehrere hundert MB bis über ein GB. Auf einer 8-Kern-NAS mit 7,4 GB RAM
+    hat eine zu hohe Zahl den gesamten Arbeitsspeicher aufgebraucht und das
+    Gerät ins Swap-Thrashing getrieben. Deshalb ist der Arbeitsspeicher hier
+    gleichberechtigt neben der Kernzahl, und nach oben ist bei 4 Schluss.
+    """
+    cores = os.cpu_count() or 2
+    by_cores = max(1, cores // 4)
+    try:
+        gib = (os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")) / 1024**3
+        by_memory = max(1, int(gib // 3))
+    except (AttributeError, OSError, ValueError):
+        by_memory = 2
+    return max(1, min(4, by_cores, by_memory))
+
 
 DEFAULT_VIDEO_EXTENSIONS = (
     # insv und 360 sind die Rohformate der 360-Kameras (Insta360, GoPro Max)
@@ -57,7 +78,7 @@ class Settings(BaseSettings):
     session_max_age: int = 60 * 60 * 24 * 30  # 30 Tage
 
     # --- Hintergrundarbeit ---------------------------------------------
-    worker_count: int = 2
+    worker_count: int = Field(default_factory=lambda: default_worker_count())
     scan_on_start: bool = True
     rescan_interval_minutes: int = 60
     watch_enabled: bool = True

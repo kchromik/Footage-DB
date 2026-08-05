@@ -19,7 +19,14 @@ from PIL import Image
 
 from ..config import settings
 from ..settings_store import runtime
-from .ffmpeg import FFmpegError, base_command, has_filter, run, vaapi_available
+from .ffmpeg import (
+    FFmpegError,
+    base_command,
+    has_filter,
+    run,
+    thread_limit,
+    vaapi_available,
+)
 
 log = logging.getLogger(__name__)
 
@@ -310,6 +317,10 @@ def _proxy_args_cpu(
             "-c:v", "libx264",
             "-preset", "veryfast",
             "-crf", str(runtime.proxy_crf),
+            # Hier als Ausgabeoption, damit sie den Encoder trifft. libx264
+            # ist der eigentliche Speicherfresser, weil es pro Thread
+            # Frame-Puffer in Quellauflösung vorhält.
+            "-threads", str(thread_limit()),
             "-profile:v", "high",
             "-g", "48",
         ]
