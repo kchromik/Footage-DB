@@ -14,6 +14,7 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+from . import progress
 from .db import close_conn, get_conn, transaction
 from .events import bus
 
@@ -62,6 +63,31 @@ def enqueue_many(job_type: str, clip_ids: list[int]) -> None:
         [(job_type, cid, priority) for cid in clip_ids],
     )
     _wake.set()
+
+
+def queue_by_type() -> list[dict]:
+    """Offene und laufende Aufgaben je Art, für die Fortschrittsanzeige."""
+    rows = get_conn().execute(
+        "SELECT type, state, COUNT(*) AS n FROM jobs "
+        "WHERE state IN ('queued','running') GROUP BY type, state"
+    ).fetchall()
+    grouped: dict[str, dict] = {}
+    for row in rows:
+        entry = grouped.setdefault(
+            row["type"],
+            {
+                "type": row["type"],
+                "label": progress.LABELS.get(row["type"], row["type"]),
+                "queued": 0,
+                "running": 0,
+            },
+        )
+        entry[row["state"]] = row["n"]
+    order = list(PRIORITIES)
+    return sorted(
+        grouped.values(),
+        key=lambda item: order.index(item["type"]) if item["type"] in order else 99,
+    )
 
 
 def queue_stats() -> dict[str, int]:
@@ -127,6 +153,7 @@ class WorkerPool:
         for thread in self._threads:
             thread.join(timeout=timeout)
         self._threads.clear()
+        progress.reset()
 
     def _loop(self) -> None:
         idle_since = 0.0
@@ -157,6 +184,7 @@ class WorkerPool:
         with self._lock:
             self.active[job["id"]] = f"{job['type']}:{job['clip_id']}"
         self._emit()
+        _begin_progress(job, conn)
         try:
             follow_ups = func(job)
             conn.execute(
@@ -182,6 +210,7 @@ class WorkerPool:
         finally:
             with self._lock:
                 self.active.pop(job["id"], None)
+            progress.finish(job["id"])
             self._emit(force=True)
 
     def _emit(self, force: bool = False) -> None:
@@ -193,6 +222,30 @@ class WorkerPool:
             bus.publish("queue", **queue_stats())
         except Exception:  # noqa: BLE001
             pass
+
+
+def _begin_progress(job: sqlite3.Row, conn: sqlite3.Connection) -> None:
+    """Meldet den Job für die Fortschrittsanzeige an.
+
+    Der Dateiname kommt aus der Datenbank und nicht aus dem Job, weil in der
+    Warteschlange nur die Clip-ID steht. Eine Zeile lesen ist billig, die
+    Anzeige dafür aussagekräftig.
+    """
+    clip = None
+    if job["clip_id"]:
+        clip = conn.execute(
+            "SELECT filename, folder, duration, size_bytes FROM clips WHERE id = ?",
+            (job["clip_id"],),
+        ).fetchone()
+    progress.begin(
+        job["id"],
+        job["type"],
+        job["clip_id"],
+        filename=clip["filename"] if clip else "",
+        folder=clip["folder"] if clip else "",
+        duration=clip["duration"] if clip else None,
+        size_bytes=clip["size_bytes"] if clip else 0,
+    )
 
 
 def _mark_clip_failure(

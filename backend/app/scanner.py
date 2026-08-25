@@ -18,6 +18,14 @@ log = logging.getLogger(__name__)
 
 _scan_lock = threading.Lock()
 
+# Zwischenstand des laufenden Durchlaufs. Die Ereignisse melden ihn nur alle
+# 50 Dateien, wer die Seite später öffnet, braucht ihn trotzdem sofort.
+_scan_state: dict[str, int] = {"done": 0, "total": 0}
+
+
+def scan_progress() -> dict[str, int]:
+    return dict(_scan_state)
+
 
 @dataclass
 class ScanResult:
@@ -91,8 +99,10 @@ def scan(mark_missing: bool = True) -> ScanResult:
             return result
 
         bus.publish("scan", state="start")
+        _scan_state.update(done=0, total=0)
         files = iter_media_files(root)
         result.files_seen = len(files)
+        _scan_state.update(done=0, total=len(files))
         log.info("Scan: %d Videodateien gefunden", len(files))
 
         conn = get_conn()
@@ -115,6 +125,7 @@ def scan(mark_missing: bool = True) -> ScanResult:
                 result.errors += 1
                 log.exception("Datei konnte nicht aufgenommen werden: %s (%s)", rel, exc)
 
+            _scan_state["done"] = index
             if index % 50 == 0 or index == len(files):
                 bus.publish(
                     "scan", state="running", done=index, total=len(files)
@@ -135,6 +146,7 @@ def scan(mark_missing: bool = True) -> ScanResult:
         bus.publish("scan", state="done", **result.as_dict())
         return result
     finally:
+        _scan_state.update(done=0, total=0)
         _scan_lock.release()
 
 

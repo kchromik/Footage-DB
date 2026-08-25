@@ -13,6 +13,8 @@ ganzen Bestand über eine Weboberfläche durchsuchbar.
 - Upload großer Dateien blockweise, mit Wiederaufnahme nach Abbruch, Tags
   direkt beim Hochladen
 - Einsortieren nach Jahr, Monat und Kamera, mit Vorschau und Undo
+- Suchfeld schlägt beim Tippen Tags, Kameras, Objektive, Ordner und Dateien vor
+- Zeigt unter "Werkzeuge" live, welche Datei ffmpeg gerade rechnet
 
 Stack: FastAPI, SQLite, React. Ein Container, keine externen Dienste.
 
@@ -196,8 +198,22 @@ Drei Modi in der Suchleiste:
 - **Text**: nur Volltext
 - **Inhalt**: nur Bildinhalt, etwa "Sonnenuntergang am Wasser"
 
+Beim Tippen kommen Vorschläge: Tags jeder Art (Kamera, Objektiv, Technik,
+Herkunft, eigene), Ordner, Bildlook, Sammlungen, Favoriten und Dateinamen. Ein
+Vorschlag setzt den passenden Filter statt eine Textsuche loszuschicken, ein
+Dateiname öffnet den Clip direkt. Auswahl mit den Pfeiltasten, Enter übernimmt.
+
 Die Filterleiste kombiniert Facetten: innerhalb einer Kategorie "oder",
 zwischen Kategorien "und".
+
+## Fortschritt
+
+Unter "Werkzeuge" steht ganz oben, was die Hintergrundarbeit gerade tut: welche
+Datei, welcher Schritt, wie weit, mit welchem Tempo und wie lange es noch
+dauert. Der Fortschritt kommt direkt aus dem laufenden ffmpeg-Prozess. Darunter
+stehen die Warteschlange nach Art, was insgesamt noch aussteht, die zuletzt
+fertigen Aufgaben und fehlgeschlagene samt Grund. Läuft etwas, führt der
+Hinweis oben in der Kopfzeile dorthin.
 
 ## Bildlook
 

@@ -2436,3 +2436,295 @@ kbd {
     width: auto;
   }
 }
+
+/* -------------------------------------------------- Fortschrittsanzeige */
+
+.block-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.block-head h3 {
+  margin: 0;
+}
+.block-meta {
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.job-row {
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.job-row:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.job-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.job-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.job-file {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.job-percent {
+  font-size: 11.5px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.job-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.job-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--text);
+  transition: width 0.6s var(--ease);
+}
+/* Ohne bekannte Gesamtlänge (Sprite zusammensetzen, Modell rechnet) läuft
+   der Balken durch, statt bei null stehen zu bleiben. */
+.job-track.unknown .job-fill {
+  width: 34%;
+  animation: job-sweep 1.6s var(--ease) infinite;
+}
+@keyframes job-sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+.job-detail {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.job-idle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 0 10px;
+  color: var(--text-dim);
+  font-size: 12.5px;
+}
+.job-idle svg {
+  color: var(--text-faint);
+  flex: none;
+}
+
+.queue-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.queue-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.queue-chip b {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.recent-list,
+.failed-list {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.recent-list .label {
+  margin-bottom: 6px;
+}
+.recent-row,
+.failed-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+.recent-row .what,
+.failed-row .what {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: 150px;
+  flex: none;
+  color: var(--text-dim);
+}
+.recent-row .file,
+.failed-row .file {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.recent-row .took {
+  text-align: right;
+}
+.failed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.failed-row .what {
+  color: var(--danger);
+}
+.failed-row .why {
+  flex: 1.4;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------ Suchvorschläge */
+
+.search-suggest {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 80;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding: 5px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-pop);
+  animation: fade 0.12s var(--ease);
+}
+.suggest-head {
+  padding: 8px 9px 4px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-size: 13.5px;
+  text-align: left;
+}
+.suggest-item.on {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.suggest-item .kind {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  flex: none;
+  color: var(--text-faint);
+}
+.suggest-item .kind .swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.suggest-item .name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.suggest-item .name mark {
+  background: none;
+  color: var(--text);
+  font-weight: 600;
+}
+.suggest-item .detail {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.suggest-item .count {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.suggest-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 9px 4px;
+  margin-top: 3px;
+  border-top: 1px solid var(--line);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.suggest-foot b {
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+/* Der Hinweis oben rechts führt zur ausführlichen Fortschrittsanzeige */
+.busy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+  transition: border-color 0.14s var(--ease), color 0.14s var(--ease);
+}
+.busy-btn:hover {
+  border-color: var(--line-strong);
+  color: var(--text);
+}

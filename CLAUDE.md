@@ -46,7 +46,9 @@ Ein Prozess, ein Container: FastAPI liefert die gebaute React-Oberfläche als st
 
 **Live-Updates** (`events.py`): Ein thread-sicherer EventBus publiziert von Worker-Threads in den asyncio-Loop, die Oberfläche hängt per Server-Sent Events dran (`frontend/src/lib/useEvents.ts`). Der Vite-Dev-Proxy hat dafür eine SSE-Sonderbehandlung.
 
-**Suche** (`search/`): `query.py` baut die SQL-Abfrage. Wichtiges Prinzip: alle Facetten (Kamera, Auflösung, Bildrate, Look, Herkunft) sind automatisch vergebene Tags, es gibt nur einen Filtermechanismus. Die semantische Suche (`semantic.py`) hält den Vektorindex als numpy-Matrix im RAM.
+**Suche** (`search/`): `query.py` baut die SQL-Abfrage. Wichtiges Prinzip: alle Facetten (Kamera, Auflösung, Bildrate, Look, Herkunft) sind automatisch vergebene Tags, es gibt nur einen Filtermechanismus. Die semantische Suche (`semantic.py`) hält den Vektorindex als numpy-Matrix im RAM. `suggest.py` liefert die Vorschläge fürs Suchfeld: vorgeschlagen wird immer der Filter, der zum Ziel führt (Tag, Ordner, Look, Sammlung, Schnellzugriff), plus Dateinamen zum direkten Öffnen. Tags und Sammlungen werden bewusst in Python gefiltert, weil SQLite bei LIKE nur ASCII case-insensitiv vergleicht.
+
+**Fortschritt** (`progress.py`): Was gerade läuft, steht im Speicher und nicht in SQLite, weil es sich mehrmals pro Sekunde ändert und nach einem Neustart wertlos ist. Der Worker meldet über `begin()` an, welchen Job er hat (Zuordnung über ein `threading.local`), `ffmpeg.run()` liest mit `-progress` den Zwischenstand mit und meldet ihn über `report()`. Neue lange Schritte sollten `progress.stage()` setzen, damit die Oberfläche nicht nur "wird bearbeitet" zeigt.
 
 **Metadaten-Heuristiken** (`metadata/rules.py`): Kamera-Aliasse, Look-Erkennung (LOG/graded/HDR/Rec.709) und Auto-Tags stehen bewusst alle in dieser einen Datei. Ein manuell gesetzter Look gewinnt immer gegen die Automatik.
 

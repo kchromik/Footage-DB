@@ -3,6 +3,7 @@ import { api } from '../lib/api'
 import type { MoveBatch, MovePlan, Stats } from '../lib/types'
 import { formatDate } from '../lib/format'
 import { IconRefresh } from './Icons'
+import { ProgressPanel } from './ProgressPanel'
 import { SettingsPanel } from './SettingsPanel'
 
 interface Props {
@@ -46,6 +47,8 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
         <p>Bibliothek einlesen, Dateien einsortieren und aufräumen.</p>
       </div>
 
+      <ProgressPanel notify={notify} />
+
       <SettingsPanel notify={notify} />
 
       <div className="card-block">
@@ -68,27 +71,7 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
             <IconRefresh size={14} />
             {stats?.scanning ? 'Scan läuft' : 'Jetzt scannen'}
           </button>
-          {(stats?.queue.failed ?? 0) > 0 && (
-            <button
-              className="btn"
-              onClick={() =>
-                run('retry', async () => {
-                  const result = await api.retryJobs()
-                  notify(`${result.requeued} Aufgaben erneut eingereiht`)
-                })
-              }
-            >
-              {stats?.queue.failed} fehlgeschlagene Aufgaben wiederholen
-            </button>
-          )}
         </div>
-        {stats && (
-          <div className="mono" style={{ marginTop: 12, fontSize: 11, color: 'var(--text-faint)' }}>
-            Warteschlange: {stats.queue.queued} offen, {stats.queue.running} in Arbeit
-            {stats.pending.proxy > 0 && `, ${stats.pending.proxy} Vorschauen ausstehend`}
-            {stats.pending.embed > 0 && `, ${stats.pending.embed} Bildanalysen ausstehend`}
-          </div>
-        )}
       </div>
 
       <div className="card-block">

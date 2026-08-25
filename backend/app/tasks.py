@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import sqlite3
 
-from . import library, paths
+from . import library, paths, progress
 from .config import settings
 from .db import get_conn
 from .events import bus
@@ -146,6 +146,7 @@ def job_proxy(job: sqlite3.Row) -> list[tuple[str, int]] | None:
         destination,
         has_audio=bool(clip["audio_codec"]),
         color_transfer=clip["color_transfer"],
+        duration=clip["duration"],
     )
     conn.execute(
         "UPDATE clips SET proxy_status='ready', proxy_size=?, updated_at=datetime('now') "
@@ -166,6 +167,7 @@ def job_sprite(job: sqlite3.Row) -> None:
         _mark_missing(clip["id"])
         return
 
+    progress.stage("Einzelbilder holen")
     info = preview.build_sprite(
         source,
         paths.sprite_path(clip["id"]),

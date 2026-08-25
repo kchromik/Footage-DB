@@ -14,6 +14,7 @@ from pathlib import Path
 
 import numpy as np
 
+from .. import progress
 from ..config import settings
 from ..db import get_conn
 from ..events import bus
@@ -135,6 +136,7 @@ def embed_clip(
             conn.execute("UPDATE clips SET embed_status='failed' WHERE id=?", (clip_id,))
             return
 
+        progress.stage("Bildvektoren berechnen")
         images = []
         for frame in frames:
             with Image.open(frame) as image:

@@ -137,6 +137,64 @@ export interface Stats {
   media_root: string
 }
 
+/** Ein Job, der gerade auf einem Worker läuft. */
+export interface ActiveJob {
+  job_id: number
+  type: string
+  label: string
+  clip_id: number | null
+  filename: string
+  folder: string
+  duration: number | null
+  size_bytes: number
+  stage: string
+  fraction: number | null
+  speed: number | null
+  fps: number | null
+  elapsed: number
+  eta: number | null
+}
+
+export interface ProgressInfo {
+  active: ActiveJob[]
+  queue: { queued: number; running: number; failed: number }
+  by_type: { type: string; label: string; queued: number; running: number }[]
+  pending: { poster: number; proxy: number; sprite: number; embed: number }
+  recent: {
+    type: string
+    label: string
+    filename: string
+    finished_at: string | null
+    seconds: number
+  }[]
+  failed: {
+    id: number
+    type: string
+    label: string
+    filename: string
+    error: string | null
+    attempts: number
+  }[]
+  done_last_10min: number
+  scanning: boolean
+  scan: { done: number; total: number }
+  last_scan_at: string | null
+  worker_count: number
+  acceleration: string
+}
+
+/** Ein Eintrag im Vorschlagsfeld der Suche. */
+export interface SuggestItem {
+  kind: 'tag' | 'folder' | 'clip' | 'collection' | 'look' | 'quick'
+  group: string
+  category: string | null
+  value: string
+  label: string
+  detail: string | null
+  count: number
+  clip_id: number | null
+}
+
 export interface Filters {
   q: string
   mode: 'auto' | 'text' | 'semantic'

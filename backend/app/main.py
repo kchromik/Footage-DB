@@ -23,6 +23,7 @@ from .api import (
     collections,
     media,
     organize,
+    search,
     setup,
     system,
     tags,
@@ -148,6 +149,7 @@ app.include_router(setup.router)
 app.include_router(setup.settings_router)
 app.include_router(system.router)
 app.include_router(clips.router)
+app.include_router(search.router)
 app.include_router(media.router)
 app.include_router(tags.router)
 app.include_router(uploads.router)

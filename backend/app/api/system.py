@@ -9,12 +9,13 @@ import logging
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
-from .. import jobs, library, scanner
+from .. import jobs, library, progress, scanner
 from ..config import settings
 from ..db import get_conn, get_setting, query, query_one
 from ..events import bus
 from ..media.ffmpeg import describe_acceleration
 from ..search import semantic
+from ..settings_store import runtime
 from ..util import format_duration, human_size
 from .deps import require_user
 
@@ -108,6 +109,84 @@ def job_overview(limit: int = 50) -> dict:
         (limit,),
     )
     return {"queue": jobs.queue_stats(), "items": [dict(row) for row in rows]}
+
+
+@secured.get("/progress")
+def progress_overview(limit: int = 5) -> dict:
+    """Was gerade läuft, was wartet und was zuletzt fertig geworden ist.
+
+    Der laufende Fortschritt kommt aus dem Speicher (progress), alles
+    Übrige aus der Job-Tabelle. Die Oberfläche bekommt zusätzlich Ereignisse
+    vom Typ "progress", dieser Aufruf ist der Einstieg beim Öffnen der Seite.
+    """
+    pending = query_one(
+        "SELECT "
+        "SUM(CASE WHEN poster_status='pending' THEN 1 ELSE 0 END) AS poster, "
+        "SUM(CASE WHEN proxy_status='pending' THEN 1 ELSE 0 END) AS proxy, "
+        "SUM(CASE WHEN sprite_status='pending' THEN 1 ELSE 0 END) AS sprite, "
+        "SUM(CASE WHEN embed_status='pending' THEN 1 ELSE 0 END) AS embed "
+        "FROM clips WHERE status = 'indexed'"
+    )
+    recent = query(
+        "SELECT j.type, j.finished_at, c.filename, "
+        "CAST((julianday(j.finished_at) - julianday(j.started_at)) * 86400 AS INTEGER) "
+        "AS seconds FROM jobs j LEFT JOIN clips c ON c.id = j.clip_id "
+        "WHERE j.state = 'done' AND j.finished_at IS NOT NULL "
+        "ORDER BY j.finished_at DESC, j.id DESC LIMIT ?",
+        (max(1, min(limit, 20)),),
+    )
+    failed = query(
+        "SELECT j.id, j.type, j.error, j.attempts, c.filename FROM jobs j "
+        "LEFT JOIN clips c ON c.id = j.clip_id WHERE j.state = 'failed' "
+        "ORDER BY j.id DESC LIMIT ?",
+        (max(1, min(limit, 20)),),
+    )
+    done_10min = query_one(
+        "SELECT COUNT(*) AS n FROM jobs WHERE state = 'done' "
+        "AND finished_at >= datetime('now', '-10 minutes')"
+    )
+
+    return {
+        "active": progress.snapshot(),
+        "queue": jobs.queue_stats(),
+        "by_type": jobs.queue_by_type(),
+        "pending": {
+            "poster": pending["poster"] or 0,
+            "proxy": pending["proxy"] or 0,
+            "sprite": pending["sprite"] or 0,
+            # Ohne inhaltliche Suche werden keine Vektoren gerechnet. Die
+            # Spalte bleibt trotzdem auf "pending" stehen, das wäre in der
+            # Anzeige eine Arbeit, die nie kommt.
+            "embed": (pending["embed"] or 0) if runtime.semantic_enabled else 0,
+        },
+        "recent": [
+            {
+                "type": row["type"],
+                "label": progress.LABELS.get(row["type"], row["type"]),
+                "filename": row["filename"] or "",
+                "finished_at": row["finished_at"],
+                "seconds": row["seconds"] or 0,
+            }
+            for row in recent
+        ],
+        "failed": [
+            {
+                "id": row["id"],
+                "type": row["type"],
+                "label": progress.LABELS.get(row["type"], row["type"]),
+                "filename": row["filename"] or "",
+                "error": row["error"],
+                "attempts": row["attempts"],
+            }
+            for row in failed
+        ],
+        "done_last_10min": done_10min["n"],
+        "scanning": scanner.is_scanning(),
+        "scan": scanner.scan_progress(),
+        "last_scan_at": get_setting("last_scan_at"),
+        "worker_count": runtime.worker_count,
+        "acceleration": describe_acceleration(),
+    }
 
 
 @secured.post("/jobs/retry")

@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, ApiError } from './lib/api'
 import { EMPTY_FILTERS } from './lib/types'
-import type { Clip, Collection, Facets, Filters, SetupStatus, Stats } from './lib/types'
+import type {
+  Clip,
+  Collection,
+  Facets,
+  Filters,
+  SetupStatus,
+  Stats,
+  SuggestItem,
+} from './lib/types'
 import { useEvents } from './lib/useEvents'
 import { LOOK_LABEL } from './lib/format'
 import type { Look } from './lib/types'
@@ -12,6 +20,7 @@ import { CollectionPicker } from './components/CollectionPicker'
 import { CollectionsView } from './components/CollectionsView'
 import { FilterPanel } from './components/FilterPanel'
 import { Login } from './components/Login'
+import { SearchBar } from './components/SearchBar'
 import { SetupWizard } from './components/SetupWizard'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
 import { StatsView } from './components/StatsView'
@@ -30,7 +39,6 @@ import {
   IconLibrary,
   IconLogo,
   IconLogout,
-  IconSearch,
   IconSimilar,
   IconStar,
   IconStats,
@@ -391,6 +399,65 @@ export default function App() {
     setSimilarTo(clip)
   }, [])
 
+  const openClipById = useCallback(
+    async (id: number) => {
+      try {
+        setDetail(await api.clip(id))
+      } catch (error) {
+        notify(`Clip konnte nicht geladen werden: ${(error as Error).message}`, 'error')
+      }
+    },
+    [notify],
+  )
+
+  /* Ein Vorschlag aus dem Suchfeld setzt einen Filter, keine Textsuche.
+     Der getippte Text hat damit seinen Zweck erfüllt und wird geleert,
+     sonst würden Filter und Volltext gleichzeitig einschränken. */
+  const applySuggestion = useCallback(
+    async (item: SuggestItem) => {
+      const alsFilter = (patch: Partial<Filters>) => {
+        setSearchDraft('')
+        changeFilters({ ...patch, q: '' })
+      }
+      setView('library')
+      switch (item.kind) {
+        case 'tag':
+          alsFilter({ tags: Array.from(new Set([...filters.tags, item.value])) })
+          break
+        case 'folder':
+          alsFilter({ folder: item.value })
+          break
+        case 'look':
+          alsFilter({ look: item.value })
+          break
+        case 'quick':
+          alsFilter(
+            item.value === 'favorite' ? { favorite: true } : { only_missing: true },
+          )
+          break
+        case 'collection': {
+          const id = Number(item.value)
+          setSearchDraft('')
+          try {
+            const list = await api.collections()
+            const found = list.items.find((entry) => entry.id === id)
+            if (found) openCollection(found)
+            else changeFilters({ collection: id, q: '' })
+          } catch {
+            changeFilters({ collection: id, q: '' })
+          }
+          break
+        }
+        case 'clip':
+          // Der Dateiname ist eindeutig genug, da will niemand erst eine
+          // Trefferliste sehen.
+          if (item.clip_id) void openClipById(item.clip_id)
+          break
+      }
+    },
+    [changeFilters, filters.tags, openClipById, openCollection],
+  )
+
   /* Ziel der Stapelaktionen: die Markierung, sonst der Clip unter dem Cursor */
   const targetIds = useMemo(() => {
     if (selection.length > 0) return selection
@@ -727,45 +794,19 @@ export default function App() {
             </button>
           )}
 
-          <div className="search">
-            <span className="icon">
-              <IconSearch />
-            </span>
-            <input
-              ref={searchRef}
-              value={searchDraft}
-              placeholder="Suchen: Dateiname, Kamera oder Bildinhalt"
-              onChange={(event) => {
-                setSearchDraft(event.target.value)
-                setSimilarTo(null)
-                if (view !== 'library') setView('library')
-              }}
-            />
-            <div className="modes">
-              {(
-                [
-                  ['auto', 'Auto'],
-                  ['text', 'Text'],
-                  ['semantic', 'Inhalt'],
-                ] as [Filters['mode'], string][]
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  className={filters.mode === key ? 'on' : ''}
-                  onClick={() => changeFilters({ mode: key })}
-                  title={
-                    key === 'semantic'
-                      ? 'Sucht nach dem, was im Bild zu sehen ist'
-                      : key === 'text'
-                        ? 'Sucht in Dateinamen, Tags und Metadaten'
-                        : 'Kombiniert beide Verfahren'
-                  }
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <SearchBar
+            value={searchDraft}
+            onValueChange={(text) => {
+              setSearchDraft(text)
+              setSimilarTo(null)
+              if (view !== 'library') setView('library')
+            }}
+            mode={filters.mode}
+            onModeChange={(next) => changeFilters({ mode: next })}
+            activeTags={filters.tags}
+            onPick={applySuggestion}
+            inputRef={searchRef}
+          />
 
           {view === 'library' && (
             <>
@@ -790,7 +831,20 @@ export default function App() {
             </>
           )}
 
-          {busy && <span className="spinner" title="Es laufen Hintergrundaufgaben" />}
+          {busy && (
+            <button
+              className="busy-btn"
+              onClick={() => setView('tools')}
+              title="Zeigt, was gerade berechnet wird"
+            >
+              <span className="spinner" />
+              <span className="mono">
+                {stats?.scanning
+                  ? 'Scan läuft'
+                  : `${stats?.queue.running ?? 0} in Arbeit`}
+              </span>
+            </button>
+          )}
           {busy && <div className="progress-line" />}
         </header>
 

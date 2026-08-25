@@ -28,9 +28,17 @@ const GRUPPEN: { title: string; rows: [string[], string][] }[] = [
     ],
   },
   {
-    title: 'Sonstiges',
+    title: 'Suchfeld',
     rows: [
       [['/'], 'In die Suche springen'],
+      [['↑', '↓'], 'Durch die Vorschläge gehen'],
+      [['Enter'], 'Vorschlag als Filter übernehmen'],
+      [['Esc'], 'Vorschläge zuklappen'],
+    ],
+  },
+  {
+    title: 'Sonstiges',
+    rows: [
       [['S'], 'Ähnliche Clips zum offenen Clip'],
       [['?'], 'Diese Übersicht'],
     ],

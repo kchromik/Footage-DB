@@ -7,9 +7,11 @@ import type {
   MediaPreview,
   MoveBatch,
   MovePlan,
+  ProgressInfo,
   SimilarPage,
   Stats,
   SetupStatus,
+  SuggestItem,
   SystemCheck,
 } from './types'
 
@@ -117,6 +119,12 @@ export const api = {
       '/api/jobs',
     ),
   retryJobs: () => request<{ requeued: number }>('/api/jobs/retry', { method: 'POST' }),
+  progress: () => request<ProgressInfo>('/api/progress'),
+  suggest: (query: string, signal?: AbortSignal) =>
+    request<{ query: string; items: SuggestItem[] }>(
+      `/api/search/suggest?q=${encodeURIComponent(query)}`,
+      { signal },
+    ),
   cleanup: () =>
     request<{ removed_artifacts: number; removed_tags: number }>(
       '/api/maintenance/cleanup',

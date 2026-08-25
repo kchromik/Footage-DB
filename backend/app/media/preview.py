@@ -17,6 +17,7 @@ from pathlib import Path
 
 from PIL import Image
 
+from .. import progress
 from ..config import settings
 from ..settings_store import runtime
 from .ffmpeg import (
@@ -205,7 +206,9 @@ def extract_frames(
         "-q:v", "4",
         str(target_dir / "frame_%03d.jpg"),
     ]
-    run(args, timeout=900)
+    # Der fps-Filter verschiebt die Zeitachse, deshalb zählt hier die Zahl
+    # der ausgegebenen Bilder und nicht die Spielzeit.
+    run(args, timeout=900, total_frames=count)
     return sorted(target_dir.glob("frame_*.jpg"))
 
 
@@ -237,6 +240,7 @@ def build_sprite(
         if not frames:
             raise FFmpegError("Keine Einzelbilder für die Vorschau erhalten")
 
+        progress.stage("Kachelblatt zusammensetzen")
         with Image.open(frames[0]) as first:
             tile_w, tile_h = first.size
 
@@ -256,11 +260,19 @@ def build_sprite(
         return SpriteInfo(columns, rows, count, tile_w, tile_h)
 
 
+PROXY_LABELS = {
+    "vaapi": "Vorschau, Hardware (VAAPI)",
+    "cpu+tonemap": "Vorschau, CPU mit HDR-Anpassung",
+    "cpu": "Vorschau, CPU",
+}
+
+
 def build_proxy(
     source: Path,
     destination: Path,
     has_audio: bool,
     color_transfer: str | None = None,
+    duration: float | None = None,
 ) -> None:
     """Kleiner H.264-Proxy, damit jedes Format im Browser läuft."""
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -278,7 +290,8 @@ def build_proxy(
     last_error: Exception | None = None
     for label, args in attempts:
         try:
-            run(args, timeout=3600)
+            progress.stage(PROXY_LABELS.get(label, label))
+            run(args, timeout=3600, total_seconds=duration)
             if destination.exists() and destination.stat().st_size > 0:
                 log.debug("Proxy erzeugt (%s): %s", label, destination.name)
                 return

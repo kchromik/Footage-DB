@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 export interface LiveEvent {
-  type: 'clip' | 'scan' | 'queue' | 'upload'
+  type: 'clip' | 'scan' | 'queue' | 'progress' | 'upload'
   [key: string]: unknown
 }
 

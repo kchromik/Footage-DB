@@ -6,8 +6,11 @@ import functools
 import logging
 import os
 import subprocess
+import tempfile
+import threading
 from pathlib import Path
 
+from .. import progress
 from ..config import settings
 from ..settings_store import runtime
 
@@ -40,8 +43,22 @@ class FFmpegError(RuntimeError):
         self.stderr = stderr
 
 
-def run(args: list[str], timeout: int = 900) -> str:
-    """Führt ffmpeg aus und liefert stderr zurück (dort loggt ffmpeg)."""
+def run(
+    args: list[str],
+    timeout: int = 900,
+    *,
+    total_seconds: float | None = None,
+    total_frames: int | None = None,
+) -> str:
+    """Führt ffmpeg aus und liefert stderr zurück (dort loggt ffmpeg).
+
+    Ist bekannt, wie lang der Durchlauf wird (Spielzeit oder Zahl der
+    Einzelbilder), und läuft der Aufruf innerhalb eines Jobs, dann wird
+    ffmpeg über -progress mitgelesen. Nur so kann die Oberfläche zeigen,
+    wie weit eine einzelne Datei ist, statt nur dass sie gerade dran ist.
+    """
+    if (total_seconds or total_frames) and progress.current() is not None:
+        return _run_with_progress(args, timeout, total_seconds, total_frames)
     try:
         proc = subprocess.run(
             args, capture_output=True, text=True, timeout=timeout, errors="replace"
@@ -55,6 +72,92 @@ def run(args: list[str], timeout: int = 900) -> str:
             proc.stderr or "",
         )
     return proc.stderr or ""
+
+
+def _run_with_progress(
+    args: list[str],
+    timeout: int,
+    total_seconds: float | None,
+    total_frames: int | None,
+) -> str:
+    """Wie run(), liest aber nebenbei den Fortschritt aus ffmpeg heraus.
+
+    stderr geht in eine temporäre Datei statt in eine Pipe: Sonst müsste
+    nebenher jemand die Pipe leeren, sonst blockiert ffmpeg, sobald der
+    Puffer voll ist, und der Job hängt.
+    """
+    # -progress ist eine globale Option und gehört deshalb vor die Eingabe.
+    # -nostats unterdrückt die zweite, unstrukturierte Fortschrittsausgabe.
+    command = [args[0], "-progress", "pipe:1", "-nostats", *args[1:]]
+    killed = threading.Event()
+
+    with tempfile.TemporaryFile(mode="w+", errors="replace") as errfile:
+        proc = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=errfile,
+            text=True,
+            errors="replace",
+        )
+
+        def abbrechen() -> None:
+            killed.set()
+            try:
+                proc.kill()
+            except OSError:
+                pass  # war in derselben Sekunde ohnehin fertig
+
+        # Ein hängender ffmpeg schreibt nichts mehr, deshalb kann das
+        # Zeitlimit nicht in der Leseschleife stecken, sondern braucht
+        # einen eigenen Wecker.
+        watchdog = threading.Timer(timeout, abbrechen)
+        watchdog.start()
+        try:
+            if proc.stdout is not None:
+                for line in proc.stdout:
+                    _read_progress_line(line, total_seconds, total_frames)
+                proc.stdout.close()
+            proc.wait()
+        finally:
+            watchdog.cancel()
+
+        errfile.seek(0)
+        stderr = errfile.read()
+
+    # Erst den Rückgabewert ansehen: Fällt der Wecker genau in dem Moment,
+    # in dem ffmpeg fertig wird, war es trotzdem kein Zeitüberschreitung.
+    if proc.returncode == 0:
+        return stderr
+    if killed.is_set():
+        raise FFmpegError(f"ffmpeg-Zeitlimit nach {timeout}s überschritten", stderr)
+    tail = stderr.strip().splitlines()[-6:]
+    raise FFmpegError(
+        "ffmpeg beendet mit Code " + str(proc.returncode) + ": " + " | ".join(tail),
+        stderr,
+    )
+
+
+def _read_progress_line(
+    line: str, total_seconds: float | None, total_frames: int | None
+) -> None:
+    """Wertet eine Zeile aus `-progress` aus (Format schlüssel=wert)."""
+    key, _, value = line.strip().partition("=")
+    value = value.strip()
+    if not value or value == "N/A":
+        return
+    try:
+        if key == "frame" and total_frames:
+            progress.report(fraction=int(value) / max(1, total_frames))
+        elif key == "out_time_us" and total_seconds and not total_frames:
+            seconds = int(value) / 1_000_000
+            progress.report(fraction=seconds / max(0.001, total_seconds))
+        elif key == "speed":
+            progress.report(speed=float(value.rstrip("x")))
+        elif key == "fps":
+            progress.report(fps=float(value))
+    except ValueError:
+        # ffmpeg schreibt hin und wieder Zwischenstände ohne Zahl
+        return
 
 
 def base_command(*, quiet: bool = True) -> list[str]:
