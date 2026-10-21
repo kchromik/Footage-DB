@@ -218,6 +218,15 @@ def test_codex_umgebung_verwendet_keinen_api_key(monkeypatch):
     assert env["CODEX_HOME"] == str(settings.data_dir / "codex")
 
 
+def test_abgelaufene_anmeldung_bleibt_trotz_lokalem_cache_gesperrt(monkeypatch):
+    monkeypatch.setattr(codex_runtime, "_auth_rejected", False)
+    monkeypatch.setattr(codex_runtime, "_status_cache", (time.monotonic(), True))
+    monkeypatch.setattr(codex_runtime, "_login_state", {"state": "idle", "code": None, "url": None, "error": None})
+    codex_runtime.invalidate_auth(rejected=True)
+    assert not codex_runtime.authenticated(refresh=True)
+    assert codex_runtime.status()["state"] == "error"
+
+
 def test_codex_aufruf_validiert_bildreferenzen_und_kein_shellzugriff(clip, tmp_path, monkeypatch):
     frames = fake_frames(clip, tmp_path)
     def run(args, prompt, directory):

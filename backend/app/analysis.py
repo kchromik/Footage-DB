@@ -154,7 +154,7 @@ def analyze(clip, frames: list[dict], directory: Path) -> ClipAnalysis:
             _pause_until = time.time() + 1800
             raise jobs.DeferredJob("Codex-Kontingent erreicht. Neuer Versuch in 30 Minuten.", 1800)
         if any(word in lower for word in ("unauthorized", "401", "refresh token", "not logged in", "sign in")):
-            codex_runtime.invalidate_auth()
+            codex_runtime.invalidate_auth(rejected=True)
             _pause_until = time.time() + 60
             raise jobs.DeferredJob("Codex-Anmeldung prüfen; die Warteschlange bleibt erhalten.", 60)
         raise RuntimeError(f"Codex-Analyse fehlgeschlagen (Exit {code}); bitte Anmeldung, Modell und Verbindung prüfen.")

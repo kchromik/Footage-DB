@@ -144,7 +144,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="FootageDB",
     description="B-Roll-Bibliothek für das eigene NAS",
-    version="1.4.0",
+    version="1.4.1",
     lifespan=lifespan,
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",

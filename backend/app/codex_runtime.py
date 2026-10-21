@@ -18,6 +18,7 @@ _processes: set[subprocess.Popen] = set()
 _login: subprocess.Popen | None = None
 _login_state: dict = {"state": "idle", "url": None, "code": None, "error": None}
 _status_cache: tuple[float, bool] = (0, False)
+_auth_rejected = False
 _stopping = False
 
 
@@ -41,6 +42,8 @@ def command() -> list[str]:
 def authenticated(refresh: bool = False) -> bool:
     global _status_cache
     with _lock:
+        if _auth_rejected:
+            return False
         if not refresh and time.monotonic() - _status_cache[0] < 15:
             return _status_cache[1]
         if not shutil.which(settings.codex_path):
@@ -55,10 +58,13 @@ def authenticated(refresh: bool = False) -> bool:
         return ok
 
 
-def invalidate_auth() -> None:
-    global _status_cache
+def invalidate_auth(rejected: bool = False) -> None:
+    global _status_cache, _auth_rejected
     with _lock:
         _status_cache = (0, False)
+        if rejected:
+            # login status prüft nur den lokalen Cache, nicht die Gültigkeit beim Dienst.
+            _auth_rejected = True
 
 
 def status() -> dict:
@@ -67,6 +73,8 @@ def status() -> dict:
         state = dict(_login_state)
     if ok:
         state.update(state="authenticated", url=None, code=None, error=None)
+    elif _auth_rejected and state["state"] != "pending":
+        state.update(state="error", error="Codex-Anmeldung abgelaufen. Bitte erneut mit ChatGPT anmelden.")
     return {**state, "installed": bool(shutil.which(settings.codex_path)), "authenticated": ok}
 
 
@@ -113,6 +121,7 @@ def start_login() -> dict:
 
 
 def _read_login(proc: subprocess.Popen) -> None:
+    global _auth_rejected
     timer = threading.Timer(15 * 60, terminate, args=(proc,))
     timer.start()
     try:
@@ -126,6 +135,9 @@ def _read_login(proc: subprocess.Popen) -> None:
                 if code:
                     _login_state["code"] = code.group(0)
         result = proc.wait()
+        if result == 0:
+            with _lock:
+                _auth_rejected = False
         invalidate_auth()
         with _lock:
             _login_state.update(state="authenticated" if result == 0 else "error", code=None, url=None,
