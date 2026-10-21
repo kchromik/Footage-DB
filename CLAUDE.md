@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projekt
 
-FootageDB: selbstgehostete B-Roll-Bibliothek für das eigene NAS. Ein Container, keine externen Dienste. Stack: FastAPI + SQLite (Backend), React 18 + Vite (Frontend). Indexiert einen Footage-Ordner, erzeugt Poster/Sprites/Previews per ffmpeg, Metadaten aus ffprobe/exiftool/Sony-Sidecars, inhaltliche Suche über ein lokales CLIP-Modell (ONNX, CPU).
+FootageDB: selbstgehostete B-Roll-Bibliothek für das eigene NAS. Ein Container. Stack: FastAPI + SQLite (Backend), React 18 + Vite (Frontend). Indexiert einen Footage-Ordner, erzeugt Poster/Sprites/Previews per ffmpeg, Metadaten aus ffprobe/exiftool/Sony-Sidecars, inhaltliche Suche über ein lokales CLIP-Modell (ONNX, CPU). Optionale Inhaltsanalyse über Codex CLI mit ChatGPT-Abo, lesender MCP-Server.
 
 ## Befehle
 
@@ -39,6 +39,10 @@ Ein Prozess, ein Container: FastAPI liefert die gebaute React-Oberfläche als st
 **SQLite ist der einzige Speicher.** Datenbank, Volltextindex (FTS), Job-Warteschlange und Laufzeit-Einstellungen liegen alle in einer SQLite-Datei (WAL-Modus, eine Verbindung pro Thread, siehe `db.py`). Kein Redis, kein Celery, keine Vektordatenbank.
 
 **Verarbeitungskette** (`tasks.py`): Jobs laufen in der Reihenfolge `probe → poster → proxy → sprite → embed`, priorisiert über `jobs.py` (Warteschlange in SQLite, Worker sind Threads, die eigentliche Arbeit passiert in ffmpeg-Unterprozessen). Material, das jeder Browser direkt abspielt (h264, ≤1080p, ≤14 Mbit/s), bekommt keinen Proxy.
+
+**Codex** (`analysis.py`, `codex_runtime.py`): Eigener einzelner Worker für `analyze` in derselben SQLite-Queue; reguläre Worker beanspruchen diese Jobs nicht. Gerätecode-Login unter `/data/codex`, ausschließlich ChatGPT-Authentifizierung. Bilder werden begrenzt extrahiert und mit `codex exec` als strukturiertes JSON analysiert. Quelle vor/nach Analyse prüfen, Ergebnisse atomar speichern, KI-Tags als `source='ai'` von manuellen Tags trennen. `available_at` steuert verzögerte Wiederholungen; regelmäßiger Backfill deckt den Bestand ab.
+
+**MCP** (`mcp_server.py`): Offizielles Python-SDK, Streamable HTTP unter `/mcp/`. Separater Bearer-Schlüssel, ausschließlich lesende Werkzeuge. `/mcp-media/` liefert befristet signierte Originale und Analysebilder. Web-Sitzungen gelten nicht für MCP, MCP-Schlüssel nicht für schreibende APIs. Verwaltung und Anleitung unter `api/integrations.py` / `IntegrationsPanel.tsx`.
 
 **Einstellungen zweistufig** (`config.py` + `settings_store.py`): Die `.env` (Präfix `FDB_`, pydantic-settings) liefert Startwerte. Was über den Einrichtungsassistenten oder die Einstellungsseite geändert wird, landet in der Tabelle `settings` und gewinnt danach gegen die Umgebungsvariable. Neuer Code, der Einstellungen liest, muss `runtime` aus `settings_store.py` nutzen, nicht direkt `settings`, wenn der Wert zur Laufzeit änderbar sein soll.
 

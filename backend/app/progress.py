@@ -31,6 +31,7 @@ LABELS = {
     "proxy": "Vorschau berechnen",
     "sprite": "Vorschaustreifen",
     "embed": "Bildanalyse",
+    "analyze": "Codex-Inhaltsanalyse",
 }
 
 

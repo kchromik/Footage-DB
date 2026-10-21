@@ -98,6 +98,7 @@ def serialize_clip(
         "proxy_status": row["proxy_status"],
         "sprite_status": row["sprite_status"],
         "embed_status": row["embed_status"],
+        "analysis_status": row["analysis_status"],
         "poster_url": (
             f"/api/media/{clip_id}/poster?v={version}"
             if row["poster_status"] == "ready"

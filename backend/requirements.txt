@@ -12,6 +12,7 @@ xxhash>=3.5,<4.0
 watchdog>=6.0,<7.0
 httpx>=0.28,<1.0
 zipstream-ng>=1.8,<2.0
+mcp>=1.30,<2.0
 
 # Semantische Suche (CLIP über ONNX Runtime, läuft auf der CPU)
 onnxruntime>=1.20

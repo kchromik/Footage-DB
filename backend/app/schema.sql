@@ -185,3 +185,14 @@ CREATE TABLE IF NOT EXISTS settings (
     value       TEXT,
     updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Eine Analyse gilt immer nur für genau eine Fassung der Quelldatei.
+CREATE TABLE IF NOT EXISTS clip_analyses (
+    clip_id INTEGER PRIMARY KEY REFERENCES clips(id) ON DELETE CASCADE,
+    source_signature TEXT NOT NULL,
+    schema_version INTEGER NOT NULL,
+    model TEXT NOT NULL,
+    result TEXT NOT NULL,
+    frames TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

@@ -71,7 +71,10 @@ def job_probe(job: sqlite3.Row) -> list[tuple[str, int]] | None:
         )
         return None
 
-    return [("poster", clip["id"]), ("proxy", clip["id"])]
+    follow = [("poster", clip["id"]), ("proxy", clip["id"])]
+    if runtime.get("analysis_enabled"):
+        follow.append(("analyze", clip["id"]))
+    return follow
 
 
 @handler("poster")

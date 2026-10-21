@@ -103,6 +103,14 @@ class Settings(BaseSettings):
     # Kleinere, schnellere Modelldateien (int8) auf Kosten etwas schlechterer Treffer
     semantic_quantized: bool = False
 
+    # Codex nutzt ausschließlich die persistente ChatGPT-Anmeldung.
+    analysis_enabled: bool = True
+    codex_path: str = "codex"
+    codex_model: str = ""
+    analysis_max_frames: int = Field(default=12, ge=3, le=24)
+    analysis_timeout: int = Field(default=600, ge=30, le=3600)
+    public_url: str = ""
+
     # --- Dateien -------------------------------------------------------
     video_extensions: str = DEFAULT_VIDEO_EXTENSIONS
     organize_uploads: bool = True
@@ -154,6 +162,10 @@ class Settings(BaseSettings):
     @property
     def tmp_dir(self) -> Path:
         return self.data_dir / "tmp"
+
+    @property
+    def codex_home(self) -> Path:
+        return self.data_dir / "codex"
 
     def ensure_dirs(self) -> None:
         for path in (

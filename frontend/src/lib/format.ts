@@ -22,10 +22,11 @@ export const CATEGORY_LABEL: Record<string, string> = {
   look: 'Look',
   tech: 'Technik',
   source: 'Herkunft',
+  content: 'KI-Inhalt',
   custom: 'Eigene Tags',
 }
 
-export const CATEGORY_ORDER = ['camera', 'tech', 'look', 'source', 'lens', 'custom']
+export const CATEGORY_ORDER = ['content', 'camera', 'tech', 'look', 'source', 'lens', 'custom']
 
 export function formatDate(value: string | null, withTime = false): string {
   if (!value) return '-'

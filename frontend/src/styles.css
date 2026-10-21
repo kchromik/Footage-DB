@@ -2728,3 +2728,40 @@ kbd {
   border-color: var(--line-strong);
   color: var(--text);
 }
+/* KI-Anbindung: die bestehende ruhige Werkzeugansicht, mit klar getrennten Schritten. */
+.integrations p { color: var(--text-dim); font-size: 12.5px; }
+.integration-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.integration-heading p { margin: 4px 0 0; }
+.integration-badge { border: 1px solid var(--line-strong); border-radius: 100px; padding: 4px 10px; font-size: 11px; white-space: nowrap; }
+.integration-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-top: 24px; }
+.integration-section { min-width: 0; padding-right: 24px; }
+.integration-section + .integration-section { border-left: 1px solid var(--line); padding: 0 0 0 24px; }
+.integration-section h4 { font-size: 16px; margin: 8px 0; }
+.integration-section .label { display: block; margin: 14px 0 6px; }
+.integration-state { display: flex; align-items: center; gap: 7px; font-size: 12px; margin: 16px 0 12px; }
+.integration-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
+.integration-dot.connected { background: var(--ok); }
+.integration-copy { display: flex; gap: 8px; min-width: 0; }
+.integration-copy input { min-width: 0; flex: 1; font-size: 11px; }
+.integration-copy .btn { flex-shrink: 0; }
+.integration-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.integrations .integration-error { color: var(--danger); overflow-wrap: anywhere; }
+.analysis-count { display: flex; gap: 12px; align-items: baseline; margin-top: 22px; }
+.analysis-count strong { font-size: 24px; font-weight: 500; }
+.analysis-count strong span { color: var(--text-faint); font-size: 15px; }
+.analysis-count > span { color: var(--text-dim); font-size: 12px; }
+.integrations progress { width: 100%; height: 5px; accent-color: var(--text); margin-top: 8px; }
+.device-login { padding: 14px; margin-top: 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.device-code { display: block; font-size: 26px; letter-spacing: 0.08em; margin: 6px 0 14px; }
+.integration-guide { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.integration-guide ol { padding-left: 20px; font-size: 12.5px; color: var(--text-dim); }
+.integration-guide li + li { margin-top: 7px; }
+.integration-config { font-family: var(--font-mono); font-size: 11px; line-height: 1.7; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); padding: 14px; }
+.integration-example { padding: 14px 0 0; margin-top: 18px; border-top: 1px solid var(--line); font-size: 13px; }
+.integrations details { margin-top: 18px; font-size: 12px; }
+.integrations summary { cursor: pointer; color: var(--text-dim); }
+@media (max-width: 900px) {
+  .integration-columns { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .integration-section { padding: 0; }
+  .integration-section + .integration-section { border-left: 0; border-top: 1px solid var(--line); padding: 20px 0 0; }
+}

@@ -27,6 +27,7 @@ FIELDS: dict[str, tuple[type, Any]] = {
     "proxy_crf": (int, None),
     "hwaccel": (str, None),
     "semantic_enabled": (bool, None),
+    "analysis_enabled": (bool, None),
     "organize_uploads": (bool, None),
     "organize_pattern": (str, None),
     "worker_count": (int, None),

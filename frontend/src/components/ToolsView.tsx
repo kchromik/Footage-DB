@@ -5,6 +5,7 @@ import { formatDate } from '../lib/format'
 import { IconRefresh } from './Icons'
 import { ProgressPanel } from './ProgressPanel'
 import { SettingsPanel } from './SettingsPanel'
+import { IntegrationsPanel } from './IntegrationsPanel'
 
 interface Props {
   stats: Stats | null
@@ -48,6 +49,8 @@ export function ToolsView({ stats, notify, onLibraryChanged }: Props) {
       </div>
 
       <ProgressPanel notify={notify} />
+
+      <IntegrationsPanel notify={notify} />
 
       <SettingsPanel notify={notify} />
 

@@ -77,7 +77,7 @@ def serve_file(
                 end = int(raw_end) if raw_end else size - 1
             elif raw_end:  # letzte N Bytes
                 start = max(0, size - int(raw_end))
-            if start >= size:
+            if start >= size or end < start or (not raw_start and not raw_end):
                 return Response(
                     status_code=416, headers={"content-range": f"bytes */{size}"}
                 )

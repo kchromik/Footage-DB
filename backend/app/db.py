@@ -82,7 +82,9 @@ def _apply_migrations(conn: sqlite3.Connection) -> None:
         "clips": {
             "projection": "TEXT",
             "stereo_mode": "TEXT",
+            "analysis_status": "TEXT NOT NULL DEFAULT 'pending'",
         },
+        "jobs": {"available_at": "REAL NOT NULL DEFAULT 0"},
         "uploads": {
             "tags": "TEXT",
         },
@@ -181,6 +183,10 @@ def reindex_fts(conn: sqlite3.Connection, clip_id: int) -> None:
         if value:
             parts.append(str(value))
     parts.extend(tags)
+
+    analysis = conn.execute("SELECT result FROM clip_analyses WHERE clip_id=?", (clip_id,)).fetchone()
+    if analysis:
+        parts.append(analysis["result"])
 
     # Dateinamen zusätzlich an Trennzeichen zerlegen, damit "A7401" auch
     # in "2026-07-14_FX3_A7401.MP4" gefunden wird

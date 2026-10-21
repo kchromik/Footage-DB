@@ -23,8 +23,16 @@ log = logging.getLogger(__name__)
 # type -> (handler, standard-priorität)
 _HANDLERS: dict[str, tuple[Callable[[sqlite3.Row], Any], int]] = {}
 
-PRIORITIES = {"probe": 10, "poster": 20, "sprite": 30, "proxy": 40, "embed": 50}
+PRIORITIES = {"probe": 10, "poster": 20, "sprite": 30, "proxy": 40, "embed": 50, "analyze": 60}
 MAX_ATTEMPTS = 3
+
+
+class DeferredJob(Exception):
+    """Anmeldung, Kontingent oder eine geänderte Quelle erfordern eine Pause."""
+
+    def __init__(self, message: str, delay: float = 60):
+        super().__init__(message)
+        self.delay = delay
 
 
 def handler(job_type: str, priority: int = 100):
@@ -108,12 +116,14 @@ def queue_stats() -> dict[str, int]:
 _wake = threading.Event()
 
 
-def _claim_job() -> sqlite3.Row | None:
+def _claim_job(analysis: bool = False) -> sqlite3.Row | None:
     """Holt den nächsten Job und markiert ihn als laufend."""
     try:
         with transaction() as conn:
             row = conn.execute(
-                "SELECT * FROM jobs WHERE state='queued' ORDER BY priority, id LIMIT 1"
+                "SELECT * FROM jobs WHERE state='queued' AND available_at<=? "
+                + ("AND type='analyze' " if analysis else "AND type!='analyze' ")
+                + "ORDER BY priority, id LIMIT 1", (time.time(),)
             ).fetchone()
             if row is None:
                 return None
@@ -130,8 +140,9 @@ def _claim_job() -> sqlite3.Row | None:
 
 
 class WorkerPool:
-    def __init__(self, count: int) -> None:
+    def __init__(self, count: int, analysis: bool = False) -> None:
         self.count = max(1, count)
+        self.analysis = analysis
         self._threads: list[threading.Thread] = []
         self._stop = threading.Event()
         self.active: dict[int, str] = {}
@@ -157,8 +168,23 @@ class WorkerPool:
 
     def _loop(self) -> None:
         idle_since = 0.0
+        last_backfill = 0.0
         while not self._stop.is_set():
-            job = _claim_job()
+            if self.analysis:
+                from .analysis import backfill, can_analyze
+
+                try:
+                    if not can_analyze():
+                        self._stop.wait(5)
+                        continue
+                    if time.monotonic() - last_backfill > 30:
+                        backfill()
+                        last_backfill = time.monotonic()
+                except Exception:
+                    log.exception("Analyse-Warteschlange konnte nicht vorbereitet werden")
+                    self._stop.wait(5)
+                    continue
+            job = _claim_job(self.analysis)
             if job is None:
                 if idle_since == 0.0:
                     idle_since = time.time()
@@ -197,14 +223,25 @@ class WorkerPool:
                     enqueue(item[0], item[1])
                 else:
                     enqueue(item, job["clip_id"])
+        except DeferredJob as exc:
+            conn.execute(
+                "UPDATE jobs SET state='queued', attempts=MAX(0,attempts-1), error=?, "
+                "available_at=?, started_at=NULL WHERE id=?",
+                (str(exc)[:1000], time.time() + exc.delay, job["id"]),
+            )
+            if job["type"] == "analyze":
+                conn.execute("UPDATE clips SET analysis_status='pending' WHERE id=?", (job["clip_id"],))
         except Exception as exc:  # noqa: BLE001 - Worker darf nie sterben
             message = f"{type(exc).__name__}: {exc}"
             log.exception("Job %s (%s) fehlgeschlagen", job["id"], job["type"])
-            state = "queued" if job["attempts"] < MAX_ATTEMPTS else "failed"
+            state = "queued" if job["attempts"] + 1 < MAX_ATTEMPTS else "failed"
+            delay = min(3600, 60 * 2 ** job["attempts"]) if job["type"] == "analyze" else 0
             conn.execute(
-                "UPDATE jobs SET state=?, error=?, finished_at=datetime('now') WHERE id=?",
-                (state, message[:2000], job["id"]),
+                "UPDATE jobs SET state=?, error=?, available_at=?, finished_at=datetime('now') WHERE id=?",
+                (state, message[:2000], time.time() + delay, job["id"]),
             )
+            if job["type"] == "analyze":
+                conn.execute("UPDATE clips SET analysis_status=? WHERE id=?", ("failed" if state == "failed" else "pending", job["clip_id"]))
             if state == "failed" and job["clip_id"]:
                 _mark_clip_failure(conn, job["type"], job["clip_id"], message)
         finally:
@@ -256,6 +293,7 @@ def _mark_clip_failure(
         "sprite": "sprite_status",
         "proxy": "proxy_status",
         "embed": "embed_status",
+        "analyze": "analysis_status",
     }.get(job_type)
     if column:
         conn.execute(f"UPDATE clips SET {column}='failed' WHERE id=?", (clip_id,))
@@ -285,7 +323,10 @@ def stop_pool() -> None:
 def retry_failed() -> int:
     conn = get_conn()
     cursor = conn.execute(
-        "UPDATE jobs SET state='queued', attempts=0, error=NULL WHERE state='failed'"
+        "UPDATE jobs SET state='queued', attempts=0, error=NULL, available_at=0 "
+        "WHERE id IN (SELECT MAX(id) FROM jobs WHERE state='failed' GROUP BY type,clip_id) "
+        "AND NOT EXISTS (SELECT 1 FROM jobs j WHERE j.clip_id=jobs.clip_id "
+        "AND j.type=jobs.type AND j.state IN ('queued','running'))"
     )
     _wake.set()
     return cursor.rowcount

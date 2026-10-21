@@ -308,3 +308,20 @@ export interface MoveBatch {
   reverted: number
   created_at: string
 }
+export interface Integrations {
+  codex: {
+    installed: boolean
+    authenticated: boolean
+    state: string
+    url: string | null
+    code: string | null
+    error: string | null
+  }
+  analysis: {
+    enabled: boolean
+    counts: Record<string, number>
+    pause_until: number | null
+    error: string | null
+  }
+  mcp: { url: string; read_only: boolean; transport: string; token_configured: boolean }
+}

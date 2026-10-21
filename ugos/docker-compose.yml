@@ -38,6 +38,9 @@ services:
       FDB_AUTH_USER: "kevin"
       FDB_WORKER_COUNT: "2"
       FDB_SEMANTIC_ENABLED: "true"
+      # Gerätecode-Anmeldung und MCP-Anleitung: Werkzeuge > KI & MCP.
+      # Codex-Anmeldung wird im bestehenden /data-Volume gespeichert.
+      FDB_ANALYSIS_ENABLED: "true"
 
     # Hardware-Encoding über die Intel-Grafikeinheit. Erst ohne starten, dann
     # diese zwei Zeilen einkommentieren und neu starten. Fährt der Container

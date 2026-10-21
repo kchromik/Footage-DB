@@ -28,7 +28,12 @@ def proxy_path(clip_id: int) -> Path:
 
 
 def artifact_paths(clip_id: int) -> list[Path]:
-    return [poster_path(clip_id), sprite_path(clip_id), proxy_path(clip_id)]
+    frames = list((settings.thumbs_dir / _shard(clip_id)).glob(f"{clip_id}_analysis_*.jpg"))
+    return [poster_path(clip_id), sprite_path(clip_id), proxy_path(clip_id), *frames]
+
+
+def analysis_frame_path(clip_id: int, generation: str, index: int) -> Path:
+    return settings.thumbs_dir / _shard(clip_id) / f"{clip_id}_analysis_{generation}_{index}.jpg"
 
 
 def ensure_parent(path: Path) -> Path:

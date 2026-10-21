@@ -220,10 +220,11 @@ export function SetupWizard({ status, onDone }: Props) {
                 </div>
                 <div className="switch-row">
                   <div className="text">
-                    <strong>Alles läuft lokal</strong>
+                    <strong>Vorschauen und Bildsuche laufen lokal</strong>
                     <span>
                       Auch die Suche nach Bildinhalten. Dafür wird einmalig ein Modell
-                      heruntergeladen, danach braucht FootageDB kein Internet mehr.
+                      heruntergeladen. Die optionale Codex-Inhaltsanalyse sendet
+                      ausgewählte Bilder an OpenAI und wird später unter Werkzeuge eingerichtet.
                     </span>
                   </div>
                 </div>

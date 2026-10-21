@@ -82,7 +82,7 @@ def upsert_scanned_file(rel_path: str, stat: os.stat_result) -> tuple[int, str]:
     if row is not None:
         unchanged = (
             row["size_bytes"] == stat.st_size
-            and abs(row["mtime"] - stat.st_mtime) < 1.0
+            and abs(row["mtime"] - stat.st_mtime) < 0.001
             and row["status"] not in ("missing", "new")
         )
         if unchanged:
@@ -99,6 +99,11 @@ def upsert_scanned_file(rel_path: str, stat: os.stat_result) -> tuple[int, str]:
             (stat.st_size, stat.st_mtime, digest, row["id"]),
         )
         jobs.enqueue("probe", row["id"], conn=conn)
+        # Ein altes Analyseergebnis darf nach Dateiaustausch nicht auffindbar bleiben.
+        conn.execute("DELETE FROM clip_analyses WHERE clip_id=?", (row["id"],))
+        conn.execute("DELETE FROM clip_tags WHERE clip_id=? AND source='ai'", (row["id"],))
+        conn.execute("UPDATE clips SET analysis_status='pending' WHERE id=?", (row["id"],))
+        reindex_fts(conn, row["id"])
         return row["id"], "updated"
 
     # Neuer Pfad: eventuell nur verschoben oder umbenannt

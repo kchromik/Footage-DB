@@ -16,7 +16,74 @@ ganzen Bestand über eine Weboberfläche durchsuchbar.
 - Suchfeld schlägt beim Tippen Tags, Kameras, Objektive, Ordner und Dateien vor
 - Zeigt unter "Werkzeuge" live, welche Datei ffmpeg gerade rechnet
 
-Stack: FastAPI, SQLite, React. Ein Container, keine externen Dienste.
+Stack: FastAPI, SQLite, React. Ein Container mit lokalem Medienindex;
+die optionale Inhaltsanalyse nutzt Codex mit deinem ChatGPT-Abo.
+
+## Codex-Inhaltsanalyse und MCP
+
+Unter **Werkzeuge → KI & MCP** stehen Anmeldung, Verarbeitungsstand,
+MCP-Adresse, Zugangsschlüssel und eine kopierbare Mac-Konfiguration.
+
+1. **Mit ChatGPT anmelden** wählen. Den angezeigten Gerätecode auf der
+   verlinkten OpenAI-Seite bestätigen. Falls nötig, Gerätecode-Anmeldung
+   in den Sicherheitseinstellungen des ChatGPT-Kontos aktivieren.
+2. Danach analysiert ein eigener Hintergrund-Worker den gesamten
+   indizierten Bestand sowie neue und geänderte Videodateien automatisch.
+   Uploads und Vorschauerzeugung laufen unabhängig weiter. Die Anmeldung
+   liegt in `/data/codex` und bleibt bei Container-Updates erhalten.
+3. In derselben Ansicht den MCP-Zugangsschlüssel anzeigen und die
+   Verbindung auf dem Mac einrichten. Der MCP läuft unter
+   `http://<nas-ip>:8080/mcp/` mit **Streamable HTTP** und dem Header
+   `Authorization: Bearer <MCP-Schlüssel>`.
+
+Es wird kein OpenAI-API-Key verwendet. Die Analyse verbraucht das Kontingent
+deines ChatGPT-/Codex-Abos. Bei einem Kontingentfehler pausiert sie 30 Minuten
+und versucht es erneut. Die SQLite-Warteschlange übersteht Neustarts;
+fehlgeschlagene Analysen können in der Oberfläche erneut angestoßen werden.
+**Automatik pausieren** lässt eine bereits laufende Analyse noch fertig werden.
+
+Pro Clip werden je nach Länge 3–12 Bilder bis maximal 960 Pixel Kantenlänge
+extrahiert und an OpenAI übermittelt. Gespeichert werden versioniertes JSON,
+englische Beschreibungen, englische und deutsche Tags, Bildbeschreibungen und
+Zeitstempel. Es findet keine Audio-Transkription statt. Die Analyse beschreibt
+Stichproben: Ereignisse dazwischen können fehlen, Kamerabewegung ist eine
+Schätzung, Zeitstempel sind keine zugesicherten Schnittgrenzen. 360°-Bilder
+werden als Panorama übergeben. Die Originaldateien bleiben unverändert.
+
+Der MCP bietet ausschließlich diese lesenden Werkzeuge:
+
+| Werkzeug | Zweck |
+|---|---|
+| `search_clips` | Inhaltssuche auf Deutsch/Englisch, Tags, Ordner, Dauer, Sammlungen und Pagination |
+| `get_clip` | Technische Daten, Notizen, Tags, Sammlungen, vollständige Analyse und Bildzeitstempel |
+| `get_frame` | Ein Analysebild direkt als Bild für die KI |
+| `get_download` | Zeitlich begrenzter Link zur vollständigen Originaldatei |
+| `list_library` | Bestand, Analysefortschritt sowie paginierte Tags, Ordner und Sammlungen |
+
+Downloadlinks gelten eine Stunde, unterstützen HTTP Range für fortsetzbare
+Downloads und benötigen keinen Web-Login. Der Client lädt die Datei mit seinem
+Downloadwerkzeug auf den Schnittrechner. Das Ersetzen des MCP-Schlüssels
+widerruft auch bestehende Downloadlinks. MCP-Zugangsdaten erlauben keinen
+Zugriff auf Uploads, Bearbeitung oder Einstellungen.
+
+**ChatGPT auf dem Mac:** Die Konfiguration in der Oberfläche ist für lokal
+ausgeführte MCP-Verbindungen gedacht, etwa Codex bzw. den lokalen
+Work-/Codex-Modus der Desktop-App. Cloudseitige ChatGPT-Verbindungen können
+eine private NAS-IP nicht direkt erreichen; dafür ist eine vom Dienst
+erreichbare Verbindung mit passender Anmeldung erforderlich. FootageDB
+wird durch diese Funktion nicht öffentlich freigegeben.
+
+Optionale Umgebungsvariablen: `FDB_ANALYSIS_ENABLED` (Standard `true`),
+`FDB_CODEX_MODEL` (leer = Codex-Standardmodell), `FDB_ANALYSIS_MAX_FRAMES`
+(Standard `12`, Bereich `3–24`), `FDB_ANALYSIS_TIMEOUT` (Standard `600` Sekunden)
+und `FDB_PUBLIC_URL` (Basisadresse bei einem Reverse Proxy, sonst automatisch).
+Die Oberfläche muss mit einem Passwort eingerichtet sein, bevor Codex und MCP
+verwaltet werden können. `/data/codex` und die Datenbank enthalten vertrauliche
+Zugangsdaten und gehören nicht in ein öffentliches Repository.
+
+Quellen: [Codex ohne Benutzerinteraktion](https://learn.chatgpt.com/docs/developer-commands#codex-exec),
+[Gerätecode-Anmeldung](https://learn.chatgpt.com/docs/auth#login-on-headless-devices),
+[MCP-Konfiguration](https://learn.chatgpt.com/docs/config-file/config-reference).
 
 ## Start
 

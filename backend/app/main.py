@@ -12,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import jobs, scanner, tasks  # noqa: F401  (tasks registriert die Job-Handler)
+from . import analysis, jobs, mcp_server, scanner, tasks  # noqa: F401
 from .config import settings
 from .db import close_conn, init_db
 from .events import bus
@@ -21,6 +21,7 @@ from .api import (
     auth,
     clips,
     collections,
+    integrations,
     media,
     organize,
     search,
@@ -115,6 +116,8 @@ async def lifespan(app: FastAPI):
         thread_limit(),
     )
     jobs.start_pool(runtime.worker_count)
+    analysis.start()
+    mcp_server.access_token()
     threading.Thread(target=_preload_semantic, name="semantic-preload", daemon=True).start()
 
     # Vor der Einrichtung nicht ungefragt losrennen, der Assistent startet
@@ -124,12 +127,15 @@ async def lifespan(app: FastAPI):
     scanner.start_watcher()
 
     rescan_task = asyncio.create_task(_periodic_rescan())
+    mcp_transport = mcp_server.create_transport()
 
     try:
-        yield
+        async with mcp_transport.session_manager.run():
+            yield
     finally:
         rescan_task.cancel()
         scanner.stop_watcher()
+        analysis.stop()
         jobs.stop_pool()
         close_conn()
         log.info("FootageDB beendet")
@@ -138,7 +144,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="FootageDB",
     description="B-Roll-Bibliothek für das eigene NAS",
-    version="1.0.0",
+    version="1.4.0",
     lifespan=lifespan,
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
@@ -155,12 +161,15 @@ app.include_router(tags.router)
 app.include_router(uploads.router)
 app.include_router(organize.router)
 app.include_router(collections.router)
+app.include_router(integrations.router)
+app.include_router(mcp_server.media_router)
+app.mount("/mcp", mcp_server.http_app)
 
 
 @app.exception_handler(404)
 async def not_found(request: Request, exc) -> JSONResponse | FileResponse:
     """API-Pfade liefern JSON, alles andere die Oberfläche (Client-Routing)."""
-    if request.url.path.startswith("/api/"):
+    if request.url.path.startswith(("/api/", "/mcp")):
         return JSONResponse({"detail": "Nicht gefunden"}, status_code=404)
     index = _static_dir() / "index.html" if _static_dir() else None
     if index and index.exists():

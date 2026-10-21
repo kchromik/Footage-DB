@@ -1,5 +1,6 @@
 import type {
   AppSettings,
+  Integrations,
   Clip,
   ClipPage,
   Collection,
@@ -70,6 +71,15 @@ function buildQuery(filters: Filters, offset: number, limit: number, facets: boo
 }
 
 export const api = {
+  integrations: () => request<Integrations>('/api/integrations'),
+  codexLogin: () => request<Integrations['codex']>('/api/integrations/codex/login', { method: 'POST' }),
+  analysisEnabled: (enabled: boolean) => request('/api/integrations/analysis', {
+    method: 'PATCH', body: JSON.stringify({ enabled }),
+  }),
+  retryAnalysis: () => request('/api/integrations/analysis/retry', { method: 'POST' }),
+  mcpToken: (rotate = false) => request<{ token: string }>(
+    `/api/integrations/mcp/token${rotate ? '/rotate' : ''}`, { method: 'POST' },
+  ),
   me: () =>
     request<{ user: string | null; auth_required: boolean; media_root: string }>(
       '/api/auth/me',

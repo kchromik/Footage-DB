@@ -23,6 +23,7 @@ os.environ.update(
         "FDB_AUTH_PASSWORD": "geheim",
         "FDB_SECRET_KEY": "test-schluessel",
         "FDB_SEMANTIC_ENABLED": "false",
+        "FDB_ANALYSIS_ENABLED": "false",
         "FDB_SCAN_ON_START": "false",
         "FDB_WATCH_ENABLED": "false",
         "FDB_RESCAN_INTERVAL_MINUTES": "0",
